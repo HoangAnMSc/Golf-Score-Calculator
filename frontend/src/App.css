@@ -215,12 +215,17 @@ body {
 }
 
 .numpad button {
-  padding: 15px;
+  padding: 15px 0;
   font-size: 20px;
   border-radius: 6px;
+  margin: 0;
   cursor: pointer;
+  background-color: white;
+  color: #2c3e50;
+  font-weight: 600;
+  border: 1px solid black;
 }
 
 .player-row .total_score{
-  font-size: 36px;
+  font-size: 40px;
 }

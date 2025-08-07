@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "../App.css";
 
 const players = ["永田湯島", "住本", "小寺", "小寺"];
 const total_score = ["92", "97", "103", "89"];
 
 const Score = () => {
+  const navigate = useNavigate();
   const [activePlayerIdx, setActivePlayerIdx] = useState(0);
   const [scores, setScores] = useState(
     players.map(() => ({ score: "", putts: "", ob: 0, bunker: 0, penalty: 0 }))
