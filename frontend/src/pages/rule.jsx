@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../App.css";
 
@@ -14,8 +15,10 @@ const options = [
 ];
 
 function Rule() {
+  const navigate = useNavigate();
+
   const [frontname, setFrontName] = useState("Front 9");
-  const [nextname, setNextName] = useState("Next 9");
+  const [backname, setBackName] = useState("Back 9");
   const [rules, setRules] = useState(
     options.reduce((acc, opt) => ({ ...acc, [opt]: false }), {})
   );
@@ -48,11 +51,12 @@ function Rule() {
 
     const data = {
       frontname,
-      nextname,
+      backname,
       rules,
     };
 
     console.log("Start Scoring:", data);
+    navigate("/score");
   };
 
   return (
@@ -73,11 +77,11 @@ function Rule() {
             />
           </div>
           <div>
-            <label>Next 9 Name</label>
+            <label>Back 9 Name</label>
             <input
               type="text"
-              value={nextname}
-              onChange={(e) => setNextName(e.target.value)}
+              value={backname}
+              onChange={(e) => setBackName(e.target.value)}
             />
           </div>
         </div>
@@ -98,7 +102,12 @@ function Rule() {
           ))}
         </div>
 
-        <button type="submit">Start Scoring</button>
+        <div className="nav_bar">
+          <button id="back_btn" type="button" onClick={() => navigate(-1)}>
+            Back
+          </button>
+          <button type="submit">Start Scoring</button>
+        </div>
       </form>
     </div>
   );
