@@ -73,16 +73,15 @@ body {
   width: 100%;
   height: 50px;
   padding: 10px;
-  background-color: #109a62;
+  background-color: #1f3a5f;
   color: white;
-  border: none;
   border-radius: 6px;
   font-size: 16px;
   cursor: pointer;
 }
 
 .form_container button:hover {
-  background-color: #0d8755;
+  background-color: #ff793f;
 }
 
 /* Rule Setting Page ======================================================================*/
@@ -169,11 +168,27 @@ body {
 
 /* Score Page ======================================================================*/
 .hole-wapper {
+  display: flex;
   text-align: center;
+  justify-content: center;
   font-weight: bold;
   margin-bottom: 16px;
   font-family: "Baloo 2", Arial, sans-serif;
   color: #2c3e50;
+}
+
+.hole-wapper h4{
+  border-bottom: 1px solid gray;
+  width: 40%;
+}
+
+.hole-wapper .hole-content{
+  display: flex;
+  flex-direction: column;
+  width: 20%;
+  justify-content: center;
+  border: 5px solid #1f3a5f;
+  border-radius: 100%;
 }
 
 .score-control {
@@ -191,6 +206,7 @@ body {
 }
 
 .player-tab {
+  position: relative;
   display: flex;
   min-width: 15%;
   height: 200px;
@@ -213,9 +229,29 @@ body {
 
 .player-tab.active {
   width: 40%;
-  background: linear-gradient(145deg, #ffd85a, #f6c93c);
-  border-color: #f6c93c;
+  background: white;
   color: #1f3a5f;
+}
+
+.team-badge {
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.team-badge.team-red {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #ef4444;
+}
+
+.team-badge.team-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #3b82f6;
 }
 
 .player-name {
@@ -232,16 +268,27 @@ body {
   display: flex;
   font-size: 20px;
   font-weight: 700;
-  width: 50px;
-  height: 50px;
-  border: 1px solid #cbd5e0;
-  text-align: center;
+  width: 45px;
+  height: 45px;
+  border: 2px solid #cbd5e0;
+  color: black;
+  background-color: white;
   align-items: center;
+  justify-content: center;
+}
+
+.score-box.selected{
+  border-color: #ff793f;
 }
 
 .player-inputs {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  text-align: center;
+}
+
+.player-inputs span{
+  font-weight: 600;
 }
 
 .numpad {
@@ -261,12 +308,135 @@ body {
   background-color: white;
   color: #1f3a5f;
   font-weight: 600;
-  border: 1px solid #cbd5e0;
+  border: 2px solid #cbd5e0;
   transition: all 0.2s ease;
 }
 
 .numpad button:hover {
-  background-color: #f6c93c;
+  background-color: white;
   color: #1f3a5f;
-  border-color: #f6c93c;
+  border: 2px solid #ff793f;
+  /* border-color: #ff793f; */
+}
+
+.counter-row {
+  display: flex;
+  justify-content: left;
+  padding: 5px 0;
+  gap: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.counter-label {
+  font-size: 18px;
+  color: #555;
+}
+
+.counter-box {
+  display: flex;
+  align-items: center;
+  background: #f1f3f5;
+  border-radius: 20%;
+  gap: 16px;
+}
+
+.form_container .circle-btn {
+  display: flex;
+  width: 30px;
+  height: 30px;
+  border-radius:100%;
+  cursor: pointer;
+  background: #1f3b77;
+  font-weight: 700;
+  font-size: 16px;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+}
+
+.circle-btn:active {
+  transform: scale(0.96);
+}
+
+.counter-value {
+  min-width: 32px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: #222;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
+  gap: 12px;
+}
+
+.checkbox-label {
+  flex: 1;
+  font-size: 18px;
+  color: #555;
+}
+
+.checkbox-cell {
+  width: 28px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form_container input[type="checkbox"] {
+  width: 25px;
+  height: 25px;
+  margin: 0;
+  accent-color: #ff793f;
+  vertical-align: middle;
+}
+
+.form_container .export_btn {
+  background-color: #0f766e;
+  font-size: 12px;
+  width: 35%;
+  height: auto;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.form_container .export_btn:hover {
+  background-color: #115e59;
+}
+
+.checkbox-pair {
+  display: flex;
+  gap: 10px;
+}
+
+.checkbox-pair .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-pair .tag input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.checkbox-pair .tag.active.red {
+  border-color: #ef4444;
+  background: #fee2e2;
+}
+
+.checkbox-pair .tag.active.blue {
+  border-color: #3b82f6;
+  background: #dbeafe;
 }

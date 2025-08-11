@@ -103,7 +103,7 @@ function Rule() {
         </div>
 
         <div className="nav_bar">
-          <button id="back_btn" type="button" onClick={() => navigate(-1)}>
+          <button id="back_btn" type="button" onClick={() => navigate("/")}>
             Back
           </button>
           <button type="submit">Start Scoring</button>
