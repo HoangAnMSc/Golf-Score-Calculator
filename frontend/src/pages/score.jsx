@@ -1,13 +1,42 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../App.css";
-
-const players = ["回答", "リン", "小寺", "田中"];
-const total_score = ["92", "97", "103", "89"];
 
 const Score = () => {
   const navigate = useNavigate();
+  const { state } = useLocation() || {};
+
+  console.log("AAA", state);
+  const players =
+    state?.players && state.players.length > 0
+      ? state.players
+      : ["P1", "P2", "P3", "P4"];
+
+  const courseName = state?.course || "ABC's Course";
+  const frontName = state?.frontname || "前半";
+  const rulesFromRule = state?.rules || null;
+
+  // Map Rule name -> key trong scores
+  const ruleKeyMap = {
+    "Reach Declaration": "reach",
+    "Near Pin Bonus": "nearPin",
+    "Eagle Bonus": "Eagle",
+    "Albatross Bonus": "Albatross",
+    "Hole-in-One Bonus": "HoleInOne",
+  };
+
+  const enabledBonusKeys = rulesFromRule
+    ? new Set(
+        Object.entries(rulesFromRule)
+          .filter(([name, on]) => on === true)
+          .map(([name]) => ruleKeyMap[name])
+          .filter(Boolean)
+      )
+    : null;
+
+  const showHandicap =
+    rulesFromRule?.Handicap !== undefined ? !!rulesFromRule.Handicap : true;
+
   const [activePlayerIdx, setActivePlayerIdx] = useState(0);
   const [par, setPar] = useState(5);
   const [scores, setScores] = useState(
@@ -22,7 +51,6 @@ const Score = () => {
       teamColor: "",
     }))
   );
-
   const [selectedField, setSelectedField] = useState("score");
 
   const handleNumberClick = (num) => {
@@ -33,8 +61,6 @@ const Score = () => {
     });
   };
 
-  const player = players[activePlayerIdx];
-  const playerData = scores[activePlayerIdx];
   const bonusOptions = [
     { key: "reach", label: "Reach" },
     { key: "nearPin", label: "Near Pin" },
@@ -43,11 +69,14 @@ const Score = () => {
     { key: "HoleInOne", label: "Hole in One" },
   ];
 
-  // Export current scoreboard to a JSON file
+  const visibleBonusOptions = enabledBonusKeys
+    ? bonusOptions.filter((opt) => enabledBonusKeys.has(opt.key))
+    : bonusOptions;
+
+  // Export JSON
   const handleExport = () => {
     const rows = players.map((name, i) => ({
       player: name,
-      totalScore: Number(total_score[i]),
       score: Number(scores[i].score || 0),
       handicap: Number(scores[i].handicap || 0),
       reach: !!scores[i].reach,
@@ -59,7 +88,8 @@ const Score = () => {
     }));
 
     const payload = {
-      course: "ABC's Course",
+      course: courseName,
+      front9: frontName,
       hole: "H1",
       par,
       exportedAt: new Date().toISOString(),
@@ -82,17 +112,21 @@ const Score = () => {
     URL.revokeObjectURL(url);
   };
 
+  const player = players[activePlayerIdx];
+  const playerData = scores[activePlayerIdx];
+
   return (
     <div className="container">
       <div className="form_container">
-        <h3>ABC's Course</h3>
+        <h3>{courseName}</h3>
         <button type="button" className="export_btn" onClick={handleExport}>
           Export File
         </button>
+
         <div className="hole-wapper">
           <h4>{player}'s Turn</h4>
           <div className="hole-content">
-            <span>前半</span>
+            <span>{frontName}</span>
             <span>H1</span>
           </div>
           <h4>Par {par}</h4>
@@ -110,8 +144,7 @@ const Score = () => {
                   onClick={() => setActivePlayerIdx(idx)}
                 >
                   <div className="player-name">{name}</div>
-                  <div className="total_score">{total_score[idx]}</div>
-                  {/* Badge Team */}
+
                   {color && (
                     <span className={`team-badge team-${color}`}>
                       {color === "red" ? "Red" : "Blue"}
@@ -230,79 +263,82 @@ const Score = () => {
           </div>
         </div>
 
-        {/* Handicap row */}
-        <div className="counter-row">
-          <div className="counter-label">Handicap</div>
-
-          <div className="counter-box">
-            <button
-              type="button"
-              className="circle-btn"
-              onClick={() =>
-                setScores((prev) => {
-                  const next = [...prev];
-                  next[activePlayerIdx].handicap = Math.max(
-                    0,
-                    (Number(next[activePlayerIdx].handicap) || 0) - 1
-                  );
-                  return next;
-                })
-              }
-              aria-label="Decrease handicap"
-            >
-              −
-            </button>
-
-            <div className="counter-value">
-              {Number(playerData.handicap || 0)}
-            </div>
-
-            <button
-              type="button"
-              className="circle-btn"
-              onClick={() =>
-                setScores((prev) => {
-                  const next = [...prev];
-                  next[activePlayerIdx].handicap = Math.min(
-                    36,
-                    (Number(next[activePlayerIdx].handicap) || 0) + 1
-                  );
-                  return next;
-                })
-              }
-              aria-label="Increase handicap"
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        {/* Bonuses group */}
-        <div className="checkbox-row" onClick={(e) => e.stopPropagation()}>
-          {bonusOptions.map(({ key, label }) => (
-            <label key={key} className="checkbox-item">
-              <input
-                type="checkbox"
-                checked={!!scores[activePlayerIdx][key]}
-                onChange={(e) =>
+        {/* Handicap row — chỉ hiển thị nếu bật */}
+        {showHandicap && (
+          <div className="counter-row">
+            <div className="counter-label">Handicap</div>
+            <div className="counter-box">
+              <button
+                type="button"
+                className="circle-btn"
+                onClick={() =>
                   setScores((prev) => {
                     const next = [...prev];
-                    next[activePlayerIdx][key] = e.target.checked;
+                    next[activePlayerIdx].handicap = Math.max(
+                      0,
+                      (Number(next[activePlayerIdx].handicap) || 0) - 1
+                    );
                     return next;
                   })
                 }
-              />
-              {label}
-            </label>
-          ))}
-        </div>
+                aria-label="Decrease handicap"
+              >
+                −
+              </button>
+
+              <div className="counter-value">
+                {Number(playerData.handicap || 0)}
+              </div>
+
+              <button
+                type="button"
+                className="circle-btn"
+                onClick={() =>
+                  setScores((prev) => {
+                    const next = [...prev];
+                    next[activePlayerIdx].handicap = Math.min(
+                      36,
+                      (Number(next[activePlayerIdx].handicap) || 0) + 1
+                    );
+                    return next;
+                  })
+                }
+                aria-label="Increase handicap"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Bonuses — chỉ render cái đã bật */}
+        {visibleBonusOptions.length > 0 && (
+          <div className="checkbox-row" onClick={(e) => e.stopPropagation()}>
+            {visibleBonusOptions.map(({ key, label }) => (
+              <label key={key} className="checkbox-item">
+                <input
+                  type="checkbox"
+                  checked={!!scores[activePlayerIdx][key]}
+                  onChange={(e) =>
+                    setScores((prev) => {
+                      const next = [...prev];
+                      next[activePlayerIdx][key] = e.target.checked;
+                      return next;
+                    })
+                  }
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        )}
 
         <div className="nav_bar">
           <button id="back_btn" type="button" onClick={() => navigate("/rule")}>
             Back
           </button>
-          <button type="preBtn">Pre</button>
-          <button type="nextBtn">Next</button>
+          <button type="button">Pre</button>
+          <button type="button">Next</button>
         </div>
       </div>
     </div>

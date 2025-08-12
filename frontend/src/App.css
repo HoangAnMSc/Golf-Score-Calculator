@@ -474,5 +474,15 @@ body {
 .form_container .checkbox-row:has(> .checkbox-item) .checkbox-item input[type="checkbox"] {
   width: 22px;
   height: 22px;
-  accent-color: #ff793f;
+}
+
+.error-text {
+  color: #d32f2f;
+  font-size: 0.9rem;
+  margin: 4px 0 8px;
+}
+
+input[aria-invalid="true"] {
+  border: 2px solid #d32f2f;
+  background-color: #fff6f6;
 }

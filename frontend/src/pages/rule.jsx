@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import "../App.css";
 
@@ -16,14 +16,17 @@ const options = [
 
 function Rule() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const setup = location.state || {}; // { course, date, players }
 
-  const [frontname, setFrontName] = useState("Front 9");
-  const [backname, setBackName] = useState("Back 9");
+  const [frontname, setFrontName] = useState("");
+  const [backname, setBackName] = useState("");
   const [rules, setRules] = useState(
     options.reduce((acc, opt) => ({ ...acc, [opt]: false }), {})
   );
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState({});
 
   const api = "http://localhost:5173";
   useEffect(() => {
@@ -40,23 +43,34 @@ function Rule() {
   }, []);
 
   const toggleRule = (rule) => {
-    setRules((prev) => ({
-      ...prev,
-      [rule]: !prev[rule],
-    }));
+    setRules((prev) => ({ ...prev, [rule]: !prev[rule] }));
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!frontname.trim()) errs.frontname = "※前半名を入力してください。"; // Front 9
+    if (!backname.trim()) errs.backname = "※後半名を入力してください。"; // Back 9
+    return errs;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
 
-    const data = {
-      frontname,
-      backname,
+    const payload = {
+      ...setup,
+      frontname: frontname.trim(),
+      backname: backname.trim(),
       rules,
     };
 
-    console.log("Start Scoring:", data);
-    navigate("/score");
+    console.log("Rule Settings:", payload);
+    navigate("/score", { state: payload });
   };
 
   return (
@@ -64,8 +78,14 @@ function Rule() {
       <h2 className="title">Golf Score Calculator</h2>
       <p className="subtitle">A simple way to track your game points.</p>
 
-      <form className="form_container" onSubmit={handleSubmit}>
+      <form className="form_container" onSubmit={handleSubmit} noValidate>
         <h3>Rule Settings</h3>
+
+        {/* (tuỳ chọn) hiển thị lại course/date/players để người dùng xem */}
+        <p className="note">
+          Course: <b>{setup.course || "-"}</b> | Date:{" "}
+          <b>{setup.date || "-"}</b>
+        </p>
 
         <div className="box_container">
           <div>
@@ -73,16 +93,24 @@ function Rule() {
             <input
               type="text"
               value={frontname}
+              placeholder="Front 9"
               onChange={(e) => setFrontName(e.target.value)}
+              aria-invalid={!!errors.frontname}
             />
+            {errors.frontname && (
+              <p className="error-text">{errors.frontname}</p>
+            )}
           </div>
           <div>
             <label>Back 9 Name</label>
             <input
               type="text"
               value={backname}
+              placeholder="Back 9"
               onChange={(e) => setBackName(e.target.value)}
+              aria-invalid={!!errors.backname}
             />
+            {errors.backname && <p className="error-text">{errors.backname}</p>}
           </div>
         </div>
 
@@ -106,7 +134,9 @@ function Rule() {
           <button id="back_btn" type="button" onClick={() => navigate("/")}>
             Back
           </button>
-          <button type="submit">Start Scoring</button>
+          <button type="submit" disabled={loading}>
+            Start Scoring
+          </button>
         </div>
       </form>
     </div>
