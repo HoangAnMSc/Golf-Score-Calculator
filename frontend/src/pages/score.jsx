@@ -16,6 +16,9 @@ const Score = () => {
       handicap: 0,
       reach: false,
       nearPin: false,
+      Eagle: false,
+      Albatross: false,
+      HoleInOne: false,
       teamColor: "",
     }))
   );
@@ -42,6 +45,9 @@ const Score = () => {
       handicap: Number(scores[i].handicap || 0),
       reach: !!scores[i].reach,
       nearPin: !!scores[i].nearPin,
+      Eagle: !!scores[i].Eagle,
+      Albatross: !!scores[i].Albatross,
+      HoleInOne: !!scores[i].HoleInOne,
       teamColor: scores[i].teamColor || "",
     }));
 
@@ -291,6 +297,60 @@ const Score = () => {
                 setScores((prev) => {
                   const next = [...prev];
                   next[activePlayerIdx].nearPin = e.target.checked;
+                  return next;
+                })
+              }
+            />
+          </div>
+        </div>
+
+        {/* Eagle row */}
+        <div className="checkbox-row">
+          <div className="checkbox-label">Eagle</div>
+          <div className="checkbox-cell">
+            <input
+              type="checkbox"
+              checked={!!scores[activePlayerIdx].Eagle}
+              onChange={(e) =>
+                setScores((prev) => {
+                  const next = [...prev];
+                  next[activePlayerIdx].Eagle = e.target.checked;
+                  return next;
+                })
+              }
+            />
+          </div>
+        </div>
+
+        {/* Albatross row */}
+        <div className="checkbox-row">
+          <div className="checkbox-label">Albatross</div>
+          <div className="checkbox-cell">
+            <input
+              type="checkbox"
+              checked={!!scores[activePlayerIdx].Albatross}
+              onChange={(e) =>
+                setScores((prev) => {
+                  const next = [...prev];
+                  next[activePlayerIdx].Albatross = e.target.checked;
+                  return next;
+                })
+              }
+            />
+          </div>
+        </div>
+
+        {/* Hole in One row */}
+        <div className="checkbox-row">
+          <div className="checkbox-label">Hole in One</div>
+          <div className="checkbox-cell">
+            <input
+              type="checkbox"
+              checked={!!scores[activePlayerIdx].HoleInOne}
+              onChange={(e) =>
+                setScores((prev) => {
+                  const next = [...prev];
+                  next[activePlayerIdx].HoleInOne = e.target.checked;
                   return next;
                 })
               }
