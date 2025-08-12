@@ -35,6 +35,13 @@ const Score = () => {
 
   const player = players[activePlayerIdx];
   const playerData = scores[activePlayerIdx];
+  const bonusOptions = [
+    { key: "reach", label: "Reach" },
+    { key: "nearPin", label: "Near Pin" },
+    { key: "Eagle", label: "Eagle" },
+    { key: "Albatross", label: "Albatross" },
+    { key: "HoleInOne", label: "Hole in One" },
+  ];
 
   // Export current scoreboard to a JSON file
   const handleExport = () => {
@@ -142,6 +149,61 @@ const Score = () => {
           </div>
         </div>
 
+        {/* Team row */}
+        <div className="checkbox-row">
+          <div className="checkbox-label">Team Color</div>
+          <div
+            className="checkbox-cell checkbox-pair"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <label
+              className={`tag ${
+                scores[activePlayerIdx].teamColor === "red"
+                  ? "active red"
+                  : "red"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={scores[activePlayerIdx].teamColor === "red"}
+                onChange={(e) =>
+                  setScores((prev) => {
+                    const next = [...prev];
+                    next[activePlayerIdx].teamColor = e.target.checked
+                      ? "red"
+                      : "";
+                    return next;
+                  })
+                }
+              />
+              Red
+            </label>
+
+            <label
+              className={`tag ${
+                scores[activePlayerIdx].teamColor === "blue"
+                  ? "active blue"
+                  : "blue"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={scores[activePlayerIdx].teamColor === "blue"}
+                onChange={(e) =>
+                  setScores((prev) => {
+                    const next = [...prev];
+                    next[activePlayerIdx].teamColor = e.target.checked
+                      ? "blue"
+                      : "";
+                    return next;
+                  })
+                }
+              />
+              Blue
+            </label>
+          </div>
+        </div>
+
         {/* Par row */}
         <div className="counter-row">
           <div className="counter-label">ParScore</div>
@@ -215,147 +277,24 @@ const Score = () => {
           </div>
         </div>
 
-        {/* Team row */}
-        <div className="checkbox-row">
-          <div className="checkbox-label">Team Color</div>
-          <div
-            className="checkbox-cell checkbox-pair"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <label
-              className={`tag ${
-                scores[activePlayerIdx].teamColor === "red" ? "active red" : ""
-              }`}
-            >
+        {/* Bonuses group */}
+        <div className="checkbox-row" onClick={(e) => e.stopPropagation()}>
+          {bonusOptions.map(({ key, label }) => (
+            <label key={key} className="checkbox-item">
               <input
                 type="checkbox"
-                checked={scores[activePlayerIdx].teamColor === "red"}
+                checked={!!scores[activePlayerIdx][key]}
                 onChange={(e) =>
                   setScores((prev) => {
                     const next = [...prev];
-                    next[activePlayerIdx].teamColor = e.target.checked
-                      ? "red"
-                      : "";
+                    next[activePlayerIdx][key] = e.target.checked;
                     return next;
                   })
                 }
               />
-              Red
+              {label}
             </label>
-
-            <label
-              className={`tag ${
-                scores[activePlayerIdx].teamColor === "blue"
-                  ? "active blue"
-                  : ""
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={scores[activePlayerIdx].teamColor === "blue"}
-                onChange={(e) =>
-                  setScores((prev) => {
-                    const next = [...prev];
-                    next[activePlayerIdx].teamColor = e.target.checked
-                      ? "blue"
-                      : "";
-                    return next;
-                  })
-                }
-              />
-              Blue
-            </label>
-          </div>
-        </div>
-
-        {/* Reach row */}
-        <div className="checkbox-row">
-          <div className="checkbox-label">Reach</div>
-          <div className="checkbox-cell">
-            <input
-              type="checkbox"
-              checked={!!scores[activePlayerIdx].reach}
-              onChange={(e) =>
-                setScores((prev) => {
-                  const next = [...prev];
-                  next[activePlayerIdx].reach = e.target.checked;
-                  return next;
-                })
-              }
-            />
-          </div>
-        </div>
-
-        {/* Near Pin row */}
-        <div className="checkbox-row">
-          <div className="checkbox-label">Near Pin</div>
-          <div className="checkbox-cell">
-            <input
-              type="checkbox"
-              checked={!!scores[activePlayerIdx].nearPin}
-              onChange={(e) =>
-                setScores((prev) => {
-                  const next = [...prev];
-                  next[activePlayerIdx].nearPin = e.target.checked;
-                  return next;
-                })
-              }
-            />
-          </div>
-        </div>
-
-        {/* Eagle row */}
-        <div className="checkbox-row">
-          <div className="checkbox-label">Eagle</div>
-          <div className="checkbox-cell">
-            <input
-              type="checkbox"
-              checked={!!scores[activePlayerIdx].Eagle}
-              onChange={(e) =>
-                setScores((prev) => {
-                  const next = [...prev];
-                  next[activePlayerIdx].Eagle = e.target.checked;
-                  return next;
-                })
-              }
-            />
-          </div>
-        </div>
-
-        {/* Albatross row */}
-        <div className="checkbox-row">
-          <div className="checkbox-label">Albatross</div>
-          <div className="checkbox-cell">
-            <input
-              type="checkbox"
-              checked={!!scores[activePlayerIdx].Albatross}
-              onChange={(e) =>
-                setScores((prev) => {
-                  const next = [...prev];
-                  next[activePlayerIdx].Albatross = e.target.checked;
-                  return next;
-                })
-              }
-            />
-          </div>
-        </div>
-
-        {/* Hole in One row */}
-        <div className="checkbox-row">
-          <div className="checkbox-label">Hole in One</div>
-          <div className="checkbox-cell">
-            <input
-              type="checkbox"
-              checked={!!scores[activePlayerIdx].HoleInOne}
-              onChange={(e) =>
-                setScores((prev) => {
-                  const next = [...prev];
-                  next[activePlayerIdx].HoleInOne = e.target.checked;
-                  return next;
-                })
-              }
-            />
-          </div>
+          ))}
         </div>
 
         <div className="nav_bar">

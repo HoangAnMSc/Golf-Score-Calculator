@@ -1,12 +1,15 @@
 FROM node:20-alpine
+WORKDIR /usr/src/app
 
-WORKDIR /app
+# copy file package* trước để cache layer deps
+COPY frontend/package*.json ./
 
-COPY package*.json ./
-RUN npm install
+# CÀI cả dev deps (vite nằm ở devDependencies)
+RUN npm ci --include=dev || npm install
 
-COPY . .
+# copy source
+COPY frontend/. .
 
 EXPOSE 5173
-
-CMD ["npm", "run", "dev"]
+# nếu thiếu node_modules vì bind mount, tự cài lại trước khi chạy
+CMD sh -lc "test -d node_modules || (npm ci --include=dev || npm install); npm run dev -- --host"
