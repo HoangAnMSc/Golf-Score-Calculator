@@ -40,7 +40,7 @@ function Home() {
 
     const enteredPlayers = players.map((p) => p.trim()).filter(Boolean);
     if (enteredPlayers.length < 3) {
-      errs.players = "※少なくとも1人を入力してください。";
+      errs.players = "※少なくとも3人を入力してください。";
     }
     return { errs, enteredPlayers };
   };

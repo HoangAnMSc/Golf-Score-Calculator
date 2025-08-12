@@ -256,7 +256,7 @@ body {
 
 .player-name {
   font-weight: bold;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .total_score {
@@ -452,8 +452,8 @@ body {
 
 .form_container .checkbox-row:has(> .checkbox-item) {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   color: #555;
   padding: 8px 0;
   border: none;
@@ -463,7 +463,6 @@ body {
 
 .form_container .checkbox-row:has(> .checkbox-item) .checkbox-item {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 5px;
   font-size: 18px;
@@ -486,3 +485,4 @@ input[aria-invalid="true"] {
   border: 2px solid #d32f2f;
   background-color: #fff6f6;
 }
+

@@ -19,8 +19,8 @@ function Rule() {
   const location = useLocation();
   const setup = location.state || {}; // { course, date, players }
 
-  const [frontname, setFrontName] = useState("");
-  const [backname, setBackName] = useState("");
+  const [frontname, setFrontName] = useState("前半");
+  const [backname, setBackName] = useState("後半");
   const [rules, setRules] = useState(
     options.reduce((acc, opt) => ({ ...acc, [opt]: false }), {})
   );

@@ -5,8 +5,6 @@ import "../App.css";
 const Score = () => {
   const navigate = useNavigate();
   const { state } = useLocation() || {};
-
-  console.log("AAA", state);
   const players =
     state?.players && state.players.length > 0
       ? state.players
@@ -20,9 +18,9 @@ const Score = () => {
   const ruleKeyMap = {
     "Reach Declaration": "reach",
     "Near Pin Bonus": "nearPin",
-    "Eagle Bonus": "Eagle",
-    "Albatross Bonus": "Albatross",
-    "Hole-in-One Bonus": "HoleInOne",
+    // "Eagle Bonus": "Eagle",
+    // "Albatross Bonus": "Albatross",
+    // "Hole-in-One Bonus": "HoleInOne",
   };
 
   const enabledBonusKeys = rulesFromRule
@@ -38,19 +36,18 @@ const Score = () => {
     rulesFromRule?.Handicap !== undefined ? !!rulesFromRule.Handicap : true;
 
   const [activePlayerIdx, setActivePlayerIdx] = useState(0);
-  const [par, setPar] = useState(5);
+  const [par, setPar] = useState(4);
+  const [totalscore, setTotalscore] = useState(0);
   const [scores, setScores] = useState(
     players.map(() => ({
       score: "",
       handicap: 0,
       reach: false,
       nearPin: false,
-      Eagle: false,
-      Albatross: false,
-      HoleInOne: false,
-      teamColor: "",
+      teamColor: "red",
     }))
   );
+
   const [selectedField, setSelectedField] = useState("score");
 
   const handleNumberClick = (num) => {
@@ -61,12 +58,24 @@ const Score = () => {
     });
   };
 
+  const setTeamColor = (idx, color, checked) => {
+    setScores((prev) => {
+      const next = [...prev];
+      if (!checked) {
+        if (next[idx].teamColor === color) next[idx].teamColor = "";
+      } else {
+        next[idx].teamColor = color; // bật color này, tắt color còn lại
+      }
+      return next;
+    });
+  };
+
   const bonusOptions = [
     { key: "reach", label: "Reach" },
     { key: "nearPin", label: "Near Pin" },
-    { key: "Eagle", label: "Eagle" },
-    { key: "Albatross", label: "Albatross" },
-    { key: "HoleInOne", label: "Hole in One" },
+    // { key: "Eagle", label: "Eagle" },
+    // { key: "Albatross", label: "Albatross" },
+    // { key: "HoleInOne", label: "Hole in One" },
   ];
 
   const visibleBonusOptions = enabledBonusKeys
@@ -117,19 +126,45 @@ const Score = () => {
 
   return (
     <div className="container">
+      <h2 className="title">Golf Score Calculator</h2>
+      <p className="subtitle">A simple way to track your game points.</p>
+
       <div className="form_container">
-        <h3>{courseName}</h3>
+        {/* Export File */}
         <button type="button" className="export_btn" onClick={handleExport}>
           Export File
         </button>
 
         <div className="hole-wapper">
-          <h4>{player}'s Turn</h4>
+          <h4>{courseName}</h4>
           <div className="hole-content">
             <span>{frontName}</span>
             <span>H1</span>
           </div>
-          <h4>Par {par}</h4>
+          <div>
+            Par
+            <div className="counter-box">
+              <button
+                type="button"
+                className="circle-btn"
+                onClick={() => setPar((p) => Math.max(3, p - 1))}
+                aria-label="Decrease Par"
+              >
+                -
+              </button>
+
+              <div className="counter-value">{par}</div>
+
+              <button
+                type="button"
+                className="circle-btn"
+                onClick={() => setPar((p) => Math.min(5, p + 1))}
+                aria-label="Increase Par"
+              >
+                +
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="score-control">
@@ -144,6 +179,7 @@ const Score = () => {
                   onClick={() => setActivePlayerIdx(idx)}
                 >
                   <div className="player-name">{name}</div>
+                  <div className="total_score">{totalscore}</div>
 
                   {color && (
                     <span className={`team-badge team-${color}`}>
@@ -183,133 +219,29 @@ const Score = () => {
         </div>
 
         {/* Team row */}
-        <div className="checkbox-row">
-          <div className="checkbox-label">Team Color</div>
-          <div
-            className="checkbox-cell checkbox-pair"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <label
-              className={`tag ${
-                scores[activePlayerIdx].teamColor === "red"
-                  ? "active red"
-                  : "red"
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={scores[activePlayerIdx].teamColor === "red"}
-                onChange={(e) =>
-                  setScores((prev) => {
-                    const next = [...prev];
-                    next[activePlayerIdx].teamColor = e.target.checked
-                      ? "red"
-                      : "";
-                    return next;
-                  })
-                }
-              />
-              Red
-            </label>
-
-            <label
-              className={`tag ${
-                scores[activePlayerIdx].teamColor === "blue"
-                  ? "active blue"
-                  : "blue"
-              }`}
-            >
+        <div className="rule_container" onClick={(e) => e.stopPropagation()}>
+          <div className="rule_item">
+            <span>Team: Red</span>
+            <label className="switch">
               <input
                 type="checkbox"
                 checked={scores[activePlayerIdx].teamColor === "blue"}
-                onChange={(e) =>
+                onChange={(e) => {
                   setScores((prev) => {
                     const next = [...prev];
                     next[activePlayerIdx].teamColor = e.target.checked
                       ? "blue"
-                      : "";
+                      : "red";
                     return next;
-                  })
-                }
+                  });
+                }}
+                onClick={(e) => e.stopPropagation()}
               />
-              Blue
+              <span className="slider"></span>
             </label>
+            <span>Blue</span>
           </div>
         </div>
-
-        {/* Par row */}
-        <div className="counter-row">
-          <div className="counter-label">ParScore</div>
-          <div className="counter-box">
-            <button
-              type="button"
-              className="circle-btn"
-              onClick={() => setPar((p) => Math.max(3, p - 1))}
-              aria-label="Decrease Par"
-            >
-              −
-            </button>
-
-            <div className="counter-value">{par}</div>
-
-            <button
-              type="button"
-              className="circle-btn"
-              onClick={() => setPar((p) => Math.min(5, p + 1))}
-              aria-label="Increase Par"
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        {/* Handicap row — chỉ hiển thị nếu bật */}
-        {showHandicap && (
-          <div className="counter-row">
-            <div className="counter-label">Handicap</div>
-            <div className="counter-box">
-              <button
-                type="button"
-                className="circle-btn"
-                onClick={() =>
-                  setScores((prev) => {
-                    const next = [...prev];
-                    next[activePlayerIdx].handicap = Math.max(
-                      0,
-                      (Number(next[activePlayerIdx].handicap) || 0) - 1
-                    );
-                    return next;
-                  })
-                }
-                aria-label="Decrease handicap"
-              >
-                −
-              </button>
-
-              <div className="counter-value">
-                {Number(playerData.handicap || 0)}
-              </div>
-
-              <button
-                type="button"
-                className="circle-btn"
-                onClick={() =>
-                  setScores((prev) => {
-                    const next = [...prev];
-                    next[activePlayerIdx].handicap = Math.min(
-                      36,
-                      (Number(next[activePlayerIdx].handicap) || 0) + 1
-                    );
-                    return next;
-                  })
-                }
-                aria-label="Increase handicap"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Bonuses — chỉ render cái đã bật */}
         {visibleBonusOptions.length > 0 && (
