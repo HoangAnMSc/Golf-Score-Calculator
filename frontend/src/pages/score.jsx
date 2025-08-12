@@ -42,14 +42,13 @@ const Score = () => {
       handicap: Number(scores[i].handicap || 0),
       reach: !!scores[i].reach,
       nearPin: !!scores[i].nearPin,
+      teamColor: scores[i].teamColor || "",
     }));
 
     const payload = {
       course: "ABC's Course",
       hole: "H1",
       par,
-      activePlayerIndex: activePlayerIdx,
-      activePlayer: players[activePlayerIdx],
       exportedAt: new Date().toISOString(),
       rows,
     };
@@ -60,7 +59,7 @@ const Score = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `scorecard_${new Date()
+    a.download = `golfscore_${new Date()
       .toISOString()
       .slice(0, 19)
       .replace(/[:T]/g, "-")}.json`;
@@ -155,7 +154,7 @@ const Score = () => {
             <button
               type="button"
               className="circle-btn"
-              onClick={() => setPar((p) => Math.min(7, p + 1))}
+              onClick={() => setPar((p) => Math.min(5, p + 1))}
               aria-label="Increase Par"
             >
               +
