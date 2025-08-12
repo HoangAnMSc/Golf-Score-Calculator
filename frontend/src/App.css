@@ -430,6 +430,15 @@ body {
   height: 16px;
   margin: 0;
 }
+.checkbox-pair .tag.red {
+  color: #ff0000;
+  border-color: #ff0000;
+}
+
+.checkbox-pair .tag.blue {
+  color: #0062ff;
+  border-color: #0062ff;
+}
 
 .checkbox-pair .tag.active.red {
   border-color: #ef4444;
@@ -439,4 +448,31 @@ body {
 .checkbox-pair .tag.active.blue {
   border-color: #3b82f6;
   background: #dbeafe;
+}
+
+.form_container .checkbox-row:has(> .checkbox-item) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  color: #555;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+}
+
+.form_container .checkbox-row:has(> .checkbox-item) .checkbox-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font-size: 18px;
+  color: #555;
+  font-weight: normal;
+}
+
+.form_container .checkbox-row:has(> .checkbox-item) .checkbox-item input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #ff793f;
 }
