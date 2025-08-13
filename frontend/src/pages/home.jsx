@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../App.css";
@@ -7,24 +7,32 @@ function Home() {
   const [course, setCourse] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [players, setPlayers] = useState(["", "", "", ""]);
-  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const api = "http://localhost:5173";
 
+  // Fetch API data if needed
   useEffect(() => {
     axios
       .get(`${api}/home`)
       .then((response) => {
-        setData(response.data);
         setLoading(false);
       })
       .catch((error) => {
         console.error("Lỗi khi gọi API:", error);
         setLoading(false);
       });
+
+    // Load data from localStorage
+    const savedSetup = localStorage.getItem("gameSetup");
+    if (savedSetup) {
+      const gameData = JSON.parse(savedSetup);
+      setCourse(gameData.course || "");
+      setDate(gameData.date || new Date().toISOString().split("T")[0]);
+      setPlayers(gameData.players || ["", "", "", ""]);
+    }
   }, []);
 
   const handlePlayerChange = (index, value) => {
@@ -65,8 +73,11 @@ function Home() {
       players: enteredPlayers,
     };
 
+    // Lưu dữ liệu vào localStorage
+    localStorage.setItem("gameSetup", JSON.stringify(payload));
+
     console.log("Game Setup:", payload);
-    navigate("/rule", { state: payload });
+    navigate("/rule");
   };
 
   return (

@@ -1,26 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../App.css";
 
 const Score = () => {
   const navigate = useNavigate();
   const { state } = useLocation() || {};
-  const players =
-    state?.players && state.players.length > 0
-      ? state.players
-      : ["P1", "P2", "P3", "P4"];
-
-  const courseName = state?.course || "ABC's Course";
+  const players = state?.players ||
+    JSON.parse(localStorage.getItem("gameSetup"))?.players || [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+    ];
+  const courseName =
+    state?.course ||
+    JSON.parse(localStorage.getItem("gameSetup"))?.course ||
+    "My Course";
   const frontName = state?.frontname || "前半";
-  const rulesFromRule = state?.rules || null;
+  const rulesFromRule =
+    state?.rules ||
+    JSON.parse(localStorage.getItem("gameSetup"))?.rules ||
+    null;
 
-  // Map Rule name -> key trong scores
   const ruleKeyMap = {
     "Reach Declaration": "reach",
     "Near Pin Bonus": "nearPin",
-    // "Eagle Bonus": "Eagle",
-    // "Albatross Bonus": "Albatross",
-    // "Hole-in-One Bonus": "HoleInOne",
   };
 
   const enabledBonusKeys = rulesFromRule
@@ -31,9 +35,6 @@ const Score = () => {
           .filter(Boolean)
       )
     : null;
-
-  const showHandicap =
-    rulesFromRule?.Handicap !== undefined ? !!rulesFromRule.Handicap : true;
 
   const [activePlayerIdx, setActivePlayerIdx] = useState(0);
   const [par, setPar] = useState(4);
@@ -50,6 +51,22 @@ const Score = () => {
 
   const [selectedField, setSelectedField] = useState("score");
 
+  useEffect(() => {
+    const savedSetup = JSON.parse(localStorage.getItem("gameSetup"));
+    if (savedSetup) {
+      setScores(savedSetup.scores || scores);
+      setPar(savedSetup.par || 4);
+    }
+  }, []);
+
+  useEffect(() => {
+    const total = scores.reduce(
+      (acc, score) => acc + Number(score.score || 0),
+      0
+    );
+    setTotalscore(total);
+  }, [scores]);
+
   const handleNumberClick = (num) => {
     setScores((prev) => {
       const updated = [...prev];
@@ -64,7 +81,7 @@ const Score = () => {
       if (!checked) {
         if (next[idx].teamColor === color) next[idx].teamColor = "";
       } else {
-        next[idx].teamColor = color; // bật color này, tắt color còn lại
+        next[idx].teamColor = color;
       }
       return next;
     });
@@ -73,16 +90,12 @@ const Score = () => {
   const bonusOptions = [
     { key: "reach", label: "Reach" },
     { key: "nearPin", label: "Near Pin" },
-    // { key: "Eagle", label: "Eagle" },
-    // { key: "Albatross", label: "Albatross" },
-    // { key: "HoleInOne", label: "Hole in One" },
   ];
 
   const visibleBonusOptions = enabledBonusKeys
     ? bonusOptions.filter((opt) => enabledBonusKeys.has(opt.key))
     : bonusOptions;
 
-  // Export JSON
   const handleExport = () => {
     const rows = players.map((name, i) => ({
       player: name,
@@ -121,22 +134,18 @@ const Score = () => {
     URL.revokeObjectURL(url);
   };
 
-  const player = players[activePlayerIdx];
-  const playerData = scores[activePlayerIdx];
-
   return (
     <div className="container">
-      <h2 className="title">Golf Score Calculator</h2>
-      <p className="subtitle">A simple way to track your game points.</p>
-
       <div className="form_container">
-        {/* Export File */}
         <button type="button" className="export_btn" onClick={handleExport}>
           Export File
         </button>
 
         <div className="hole-wapper">
-          <h4>{courseName}</h4>
+          <div className="course_content">
+            <span>Course</span>
+            <div className="course_title">{courseName}</div>
+          </div>
           <div className="hole-content">
             <span>{frontName}</span>
             <span>H1</span>
@@ -148,18 +157,14 @@ const Score = () => {
                 type="button"
                 className="circle-btn"
                 onClick={() => setPar((p) => Math.max(3, p - 1))}
-                aria-label="Decrease Par"
               >
                 -
               </button>
-
               <div className="counter-value">{par}</div>
-
               <button
                 type="button"
                 className="circle-btn"
                 onClick={() => setPar((p) => Math.min(5, p + 1))}
-                aria-label="Increase Par"
               >
                 +
               </button>
@@ -180,13 +185,11 @@ const Score = () => {
                 >
                   <div className="player-name">{name}</div>
                   <div className="total_score">{totalscore}</div>
-
                   {color && (
                     <span className={`team-badge team-${color}`}>
                       {color === "red" ? "Red" : "Blue"}
                     </span>
                   )}
-
                   <div className="player-inputs">
                     <span>Score</span>
                     <div
@@ -215,6 +218,16 @@ const Score = () => {
                 {num}
               </button>
             ))}
+
+            {/* Add the パー label */}
+            <div
+              className={`par-label ${par === 5 ? "par-below" : ""}`}
+              style={
+                par === 3 ? { left: `73.5%` } : par === 4 ? { left: `94%` } : {}
+              }
+            >
+              パー
+            </div>
           </div>
         </div>
 

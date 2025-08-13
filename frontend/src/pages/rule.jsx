@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../App.css";
 
 const options = [
@@ -16,30 +15,29 @@ const options = [
 
 function Rule() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const setup = location.state || {}; // { course, date, players }
 
+  // Khởi tạo state
+  const [course, setCourse] = useState("");
+  const [date, setDate] = useState("");
+  const [players, setPlayers] = useState([]);
   const [frontname, setFrontName] = useState("前半");
   const [backname, setBackName] = useState("後半");
   const [rules, setRules] = useState(
     options.reduce((acc, opt) => ({ ...acc, [opt]: false }), {})
   );
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
 
-  const api = "http://localhost:5173";
   useEffect(() => {
-    axios
-      .get(`${api}/home`)
-      .then((response) => {
-        setData(response.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Lỗi khi gọi API:", error);
-        setLoading(false);
-      });
+    // Lấy dữ liệu game setup từ localStorage khi trang Rule được tải
+    const savedSetup = JSON.parse(localStorage.getItem("gameSetup"));
+    if (savedSetup) {
+      setCourse(savedSetup.course || "");
+      setDate(savedSetup.date || "");
+      setPlayers(savedSetup.players || []);
+      setFrontName(savedSetup.frontname || "前半");
+      setBackName(savedSetup.backname || "後半");
+      setRules(savedSetup.rules || {});
+    }
   }, []);
 
   const toggleRule = (rule) => {
@@ -63,14 +61,20 @@ function Rule() {
     setErrors({});
 
     const payload = {
-      ...setup,
+      course,
+      date,
+      players,
       frontname: frontname.trim(),
       backname: backname.trim(),
       rules,
     };
 
     console.log("Rule Settings:", payload);
-    navigate("/score", { state: payload });
+
+    // Lưu vào localStorage các thay đổi
+    localStorage.setItem("gameSetup", JSON.stringify(payload));
+
+    navigate("/score");
   };
 
   return (
@@ -81,10 +85,8 @@ function Rule() {
       <form className="form_container" onSubmit={handleSubmit} noValidate>
         <h3>Rule Settings</h3>
 
-        {/* (tuỳ chọn) hiển thị lại course/date/players để người dùng xem */}
         <p className="note">
-          Course: <b>{setup.course || "-"}</b> | Date:{" "}
-          <b>{setup.date || "-"}</b>
+          Course: <b>{course || "-"}</b> | Date: <b>{date || "-"}</b>
         </p>
 
         <div className="box_container">
@@ -92,10 +94,9 @@ function Rule() {
             <label>Front 9 Name</label>
             <input
               type="text"
-              value={frontname}
+              value={frontname || ""}
               placeholder="Front 9"
               onChange={(e) => setFrontName(e.target.value)}
-              aria-invalid={!!errors.frontname}
             />
             {errors.frontname && (
               <p className="error-text">{errors.frontname}</p>
@@ -105,10 +106,9 @@ function Rule() {
             <label>Back 9 Name</label>
             <input
               type="text"
-              value={backname}
+              value={backname || ""}
               placeholder="Back 9"
               onChange={(e) => setBackName(e.target.value)}
-              aria-invalid={!!errors.backname}
             />
             {errors.backname && <p className="error-text">{errors.backname}</p>}
           </div>
@@ -134,7 +134,7 @@ function Rule() {
           <button id="back_btn" type="button" onClick={() => navigate("/")}>
             Back
           </button>
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={false}>
             Start Scoring
           </button>
         </div>
