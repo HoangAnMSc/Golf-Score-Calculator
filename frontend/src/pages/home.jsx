@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import "../App.css";
 
 function Home() {
@@ -11,28 +10,22 @@ function Home() {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
-  const api = "http://localhost:5173";
-
-  // Fetch API data if needed
   useEffect(() => {
-    axios
-      .get(`${api}/home`)
-      .then((response) => {
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Lỗi khi gọi API:", error);
-        setLoading(false);
-      });
-
-    // Load data from localStorage
     const savedSetup = localStorage.getItem("gameSetup");
     if (savedSetup) {
       const gameData = JSON.parse(savedSetup);
       setCourse(gameData.course || "");
       setDate(gameData.date || new Date().toISOString().split("T")[0]);
+      console.log(gameData.players);
       setPlayers(gameData.players || ["", "", "", ""]);
+    } else {
+      setCourse("");
+      setDate(new Date().toISOString().split("T")[0]);
+      setPlayers(["", "", "", ""]);
     }
+
+    // Sau khi load dữ liệu xong, set loading thành false
+    setLoading(false); // Đảm bảo nút Set Rules được bật
   }, []);
 
   const handlePlayerChange = (index, value) => {
@@ -70,7 +63,7 @@ function Home() {
     const payload = {
       course: course.trim(),
       date,
-      players: enteredPlayers,
+      players: enteredPlayers, // Đảm bảo players được lưu đúng
     };
 
     // Lưu dữ liệu vào localStorage
@@ -87,7 +80,6 @@ function Home() {
 
       <form className="form_container" onSubmit={handleSubmit} noValidate>
         <h3>Game Setup</h3>
-
         <label>Golf Course</label>
         <input
           type="text"

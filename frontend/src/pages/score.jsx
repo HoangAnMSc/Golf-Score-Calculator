@@ -5,6 +5,13 @@ import "../App.css";
 const Score = () => {
   const navigate = useNavigate();
   const { state } = useLocation() || {};
+
+  // Đọc giá trị hole từ localStorage khi tải lại trang
+  const [hole, setHole] = useState(() => {
+    const savedHole = localStorage.getItem("hole");
+    return savedHole ? JSON.parse(savedHole) : 1; // Default to hole 1 if not found
+  });
+
   const players = state?.players ||
     JSON.parse(localStorage.getItem("gameSetup"))?.players || [
       "P1",
@@ -12,11 +19,15 @@ const Score = () => {
       "P3",
       "P4",
     ];
+
   const courseName =
     state?.course ||
     JSON.parse(localStorage.getItem("gameSetup"))?.course ||
     "My Course";
-  const frontName = state?.frontname || "前半";
+
+  const frontName =
+    hole >= 10 ? state?.backname || "後半" : state?.frontname || "前半";
+
   const rulesFromRule =
     state?.rules ||
     JSON.parse(localStorage.getItem("gameSetup"))?.rules ||
@@ -41,8 +52,8 @@ const Score = () => {
   const [totalscore, setTotalscore] = useState(0);
   const [scores, setScores] = useState(
     players.map(() => ({
-      score: "",
-      handicap: 0,
+      score: 0,
+      total_score: 0,
       reach: false,
       nearPin: false,
       teamColor: "red",
@@ -50,6 +61,13 @@ const Score = () => {
   );
 
   const [selectedField, setSelectedField] = useState("score");
+  const [errorMessage, setErrorMessage] = useState(""); // Store error message
+  const [showError, setShowError] = useState(false); // Control visibility of error message
+
+  useEffect(() => {
+    // Lưu giá trị hole vào localStorage khi nó thay đổi
+    localStorage.setItem("hole", JSON.stringify(hole));
+  }, [hole]);
 
   useEffect(() => {
     const savedSetup = JSON.parse(localStorage.getItem("gameSetup"));
@@ -57,33 +75,27 @@ const Score = () => {
       setScores(savedSetup.scores || scores);
       setPar(savedSetup.par || 4);
     }
-  }, []);
+
+    // Load saved hole data when the component mounts or hole changes
+    const savedHoleData = JSON.parse(localStorage.getItem("allHolesData"));
+    if (savedHoleData && savedHoleData[hole]) {
+      const holeData = savedHoleData[hole];
+      setPar(holeData.par);
+      setScores(holeData.scores);
+    }
+  }, [hole]);
 
   useEffect(() => {
-    const total = scores.reduce(
-      (acc, score) => acc + Number(score.score || 0),
-      0
-    );
+    // Update total_score when scores change
+    const total = scores.reduce((acc, score) => acc + score.total_score, 0);
     setTotalscore(total);
   }, [scores]);
 
   const handleNumberClick = (num) => {
     setScores((prev) => {
       const updated = [...prev];
-      updated[activePlayerIdx][selectedField] = String(num);
+      updated[activePlayerIdx][selectedField] = Number(num);
       return updated;
-    });
-  };
-
-  const setTeamColor = (idx, color, checked) => {
-    setScores((prev) => {
-      const next = [...prev];
-      if (!checked) {
-        if (next[idx].teamColor === color) next[idx].teamColor = "";
-      } else {
-        next[idx].teamColor = color;
-      }
-      return next;
     });
   };
 
@@ -100,19 +112,16 @@ const Score = () => {
     const rows = players.map((name, i) => ({
       player: name,
       score: Number(scores[i].score || 0),
-      handicap: Number(scores[i].handicap || 0),
+      total_score: Number(scores[i].total_score || 0),
       reach: !!scores[i].reach,
       nearPin: !!scores[i].nearPin,
-      Eagle: !!scores[i].Eagle,
-      Albatross: !!scores[i].Albatross,
-      HoleInOne: !!scores[i].HoleInOne,
       teamColor: scores[i].teamColor || "",
     }));
 
     const payload = {
       course: courseName,
       front9: frontName,
-      hole: "H1",
+      hole: `H${hole}`,
       par,
       exportedAt: new Date().toISOString(),
       rows,
@@ -134,9 +143,92 @@ const Score = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleNextHole = () => {
+    const allScoresEntered = scores.every((score) => score.score !== 0);
+
+    const redTeamCount = scores.filter(
+      (score) => score.teamColor === "red"
+    ).length;
+    const blueTeamCount = scores.filter(
+      (score) => score.teamColor === "blue"
+    ).length;
+
+    if (!allScoresEntered) {
+      setErrorMessage("すべてのプレイヤーがスコアを入力してください。");
+      setShowError(true);
+      return;
+    } else if (redTeamCount !== 2 || blueTeamCount !== 2) {
+      setErrorMessage("各チームに2人のプレイヤーを入力してください。");
+      setShowError(true);
+      return;
+    } else {
+      setErrorMessage("");
+      setShowError(false);
+    }
+
+    setScores((prevScores) => {
+      const updatedScores = prevScores.map((score) => ({
+        ...score,
+        total_score: score.total_score + Number(score.score || 0),
+      }));
+
+      const resetScores = updatedScores.map((score) => ({
+        ...score,
+        score: 0,
+        reach: false,
+        nearPin: false,
+        teamColor: "red",
+      }));
+
+      return resetScores;
+    });
+
+    const holeData = {
+      hole,
+      par,
+      scores,
+    };
+    const allHolesData = JSON.parse(localStorage.getItem("allHolesData")) || {};
+    allHolesData[hole] = holeData;
+    localStorage.setItem("allHolesData", JSON.stringify(allHolesData));
+
+    setHole((prevHole) => {
+      const nextHole = prevHole + 1;
+      if (nextHole > 18) {
+        return 18;
+      }
+      return nextHole;
+    });
+  };
+
+  const handlePreHole = () => {
+    const prevHole = hole > 1 ? hole - 1 : 1;
+    setHole(prevHole);
+
+    const allHolesData = JSON.parse(localStorage.getItem("allHolesData")) || {};
+    const prevHoleData = allHolesData[prevHole];
+    if (prevHoleData) {
+      setPar(prevHoleData.par || 4);
+      setScores(prevHoleData.scores || scores);
+    }
+  };
+
+  const handleCloseError = () => {
+    setShowError(false);
+  };
+
   return (
     <div className="container">
       <div className="form_container">
+        {showError && (
+          <div className="error-modal">
+            <div className="error-modal-content">
+              <p>{errorMessage}</p>
+              <button onClick={handleCloseError}>OK</button>
+            </div>
+          </div>
+        )}
+
         <button type="button" className="export_btn" onClick={handleExport}>
           Export File
         </button>
@@ -148,7 +240,7 @@ const Score = () => {
           </div>
           <div className="hole-content">
             <span>{frontName}</span>
-            <span>H1</span>
+            <span>H{hole}</span>
           </div>
           <div>
             Par
@@ -184,7 +276,8 @@ const Score = () => {
                   onClick={() => setActivePlayerIdx(idx)}
                 >
                   <div className="player-name">{name}</div>
-                  <div className="total_score">{totalscore}</div>
+                  <div className="total_score">{scores[idx].total_score}</div>
+                  <div className="pre_score">+({scores[idx].score})</div>
                   {color && (
                     <span className={`team-badge team-${color}`}>
                       {color === "red" ? "Red" : "Blue"}
@@ -219,7 +312,6 @@ const Score = () => {
               </button>
             ))}
 
-            {/* Add the パー label */}
             <div
               className={`par-label ${par === 5 ? "par-below" : ""}`}
               style={
@@ -231,32 +323,28 @@ const Score = () => {
           </div>
         </div>
 
-        {/* Team row */}
-        <div className="rule_container" onClick={(e) => e.stopPropagation()}>
-          <div className="rule_item">
-            <span>Team: Red</span>
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={scores[activePlayerIdx].teamColor === "blue"}
-                onChange={(e) => {
-                  setScores((prev) => {
-                    const next = [...prev];
-                    next[activePlayerIdx].teamColor = e.target.checked
-                      ? "blue"
-                      : "red";
-                    return next;
-                  });
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <span className="slider"></span>
-            </label>
-            <span>Blue</span>
-          </div>
+        <div className="team-item" onClick={(e) => e.stopPropagation()}>
+          <span className="team-label-red">Red</span>
+          <label className="team-switch">
+            <input
+              type="checkbox"
+              checked={scores[activePlayerIdx].teamColor === "blue"}
+              onChange={(e) => {
+                setScores((prev) => {
+                  const next = [...prev];
+                  next[activePlayerIdx].teamColor = e.target.checked
+                    ? "blue"
+                    : "red";
+                  return next;
+                });
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <span className="team-slider"></span>
+          </label>
+          <span className="team-label-blue">Blue</span>
         </div>
 
-        {/* Bonuses — chỉ render cái đã bật */}
         {visibleBonusOptions.length > 0 && (
           <div>
             {visibleBonusOptions.map(({ key, label }) => (
@@ -288,8 +376,12 @@ const Score = () => {
           <button id="back_btn" type="button" onClick={() => navigate("/rule")}>
             Back
           </button>
-          <button type="button">Pre</button>
-          <button type="button">Next</button>
+          <button type="button" onClick={handlePreHole}>
+            Pre
+          </button>
+          <button type="button" onClick={handleNextHole}>
+            Next
+          </button>
         </div>
       </div>
     </div>
