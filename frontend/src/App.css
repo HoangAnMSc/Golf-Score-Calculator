@@ -456,10 +456,13 @@ body {
   align-items: flex-start;
   color: #555;
   padding: 8px 0;
-  border: none;
   background: transparent;
   font-size: 18px;
 }
+
+/* .form_container .checkbox-row:has(> .checkbox-item):last-child {
+  border-bottom: none;
+} */
 
 .form_container .checkbox-row:has(> .checkbox-item) .checkbox-item {
   display: flex;

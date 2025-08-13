@@ -245,22 +245,28 @@ const Score = () => {
 
         {/* Bonuses — chỉ render cái đã bật */}
         {visibleBonusOptions.length > 0 && (
-          <div className="checkbox-row" onClick={(e) => e.stopPropagation()}>
+          <div>
             {visibleBonusOptions.map(({ key, label }) => (
-              <label key={key} className="checkbox-item">
-                <input
-                  type="checkbox"
-                  checked={!!scores[activePlayerIdx][key]}
-                  onChange={(e) =>
-                    setScores((prev) => {
-                      const next = [...prev];
-                      next[activePlayerIdx][key] = e.target.checked;
-                      return next;
-                    })
-                  }
-                />
-                {label}
-              </label>
+              <div
+                key={key}
+                className="checkbox-row"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <label className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={!!scores[activePlayerIdx][key]}
+                    onChange={(e) =>
+                      setScores((prev) => {
+                        const next = [...prev];
+                        next[activePlayerIdx][key] = e.target.checked;
+                        return next;
+                      })
+                    }
+                  />
+                  {label}
+                </label>
+              </div>
             ))}
           </div>
         )}
