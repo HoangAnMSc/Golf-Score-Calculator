@@ -75,7 +75,7 @@ function Home() {
 
   return (
     <div className="container">
-      <h2 className="title">Golf Score Calculator</h2>
+      <h2 className="title">Score Calculator</h2>
       <p className="subtitle">A simple way to track your game points.</p>
 
       <form className="form_container" onSubmit={handleSubmit} noValidate>

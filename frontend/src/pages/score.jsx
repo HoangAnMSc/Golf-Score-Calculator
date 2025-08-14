@@ -5,11 +5,13 @@ import "../App.css";
 const Score = () => {
   const navigate = useNavigate();
   const { state } = useLocation() || {};
-
-  // Đọc giá trị hole từ localStorage khi tải lại trang
   const [hole, setHole] = useState(() => {
     const savedHole = localStorage.getItem("hole");
-    return savedHole ? JSON.parse(savedHole) : 1; // Default to hole 1 if not found
+    return savedHole ? JSON.parse(savedHole) : 1;
+  });
+  const [activePlayerIdx, setActivePlayerIdx] = useState(() => {
+    const savedIdx = localStorage.getItem("activePlayerIdx");
+    return savedIdx ? JSON.parse(savedIdx) : 0;
   });
 
   const players = state?.players ||
@@ -47,27 +49,40 @@ const Score = () => {
       )
     : null;
 
-  const [activePlayerIdx, setActivePlayerIdx] = useState(0);
   const [par, setPar] = useState(4);
-  const [totalscore, setTotalscore] = useState(0);
-  const [scores, setScores] = useState(
-    players.map(() => ({
-      score: 0,
-      total_score: 0,
-      reach: false,
-      nearPin: false,
-      teamColor: "red",
-    }))
-  );
+  const [scores, setScores] = useState(() => {
+    const savedHoleData =
+      JSON.parse(localStorage.getItem("allHolesData")) || {};
+    const previousHoleData = savedHoleData[hole - 1] || { scores: [] };
+
+    return players.map((_, idx) => {
+      const previousScore = previousHoleData.scores[idx] || {
+        score: 0,
+        total_score: 0,
+      };
+      return {
+        score: 0,
+        pre_score: 0,
+        total_score: previousScore.total_score + previousScore.pre_score || 0,
+        reach: false,
+        nearPin: false,
+        teamColor: "red",
+      };
+    });
+  });
 
   const [selectedField, setSelectedField] = useState("score");
-  const [errorMessage, setErrorMessage] = useState(""); // Store error message
-  const [showError, setShowError] = useState(false); // Control visibility of error message
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showError, setShowError] = useState(false);
 
   useEffect(() => {
     // Lưu giá trị hole vào localStorage khi nó thay đổi
     localStorage.setItem("hole", JSON.stringify(hole));
   }, [hole]);
+
+  useEffect(() => {
+    localStorage.setItem("activePlayerIdx", JSON.stringify(activePlayerIdx));
+  }, [activePlayerIdx]);
 
   useEffect(() => {
     const savedSetup = JSON.parse(localStorage.getItem("gameSetup"));
@@ -83,19 +98,58 @@ const Score = () => {
       setPar(holeData.par);
       setScores(holeData.scores);
     }
-  }, [hole]);
+  }, []);
 
-  useEffect(() => {
-    // Update total_score when scores change
-    const total = scores.reduce((acc, score) => acc + score.total_score, 0);
-    setTotalscore(total);
-  }, [scores]);
+  const [inputBuffers, setInputBuffers] = useState(() => players.map(() => ""));
 
   const handleNumberClick = (num) => {
+    const digit = String(num);
+
+    setInputBuffers((prevBufs) => {
+      const nextBufs = [...prevBufs];
+      const newBuf = (nextBufs[activePlayerIdx] + digit).slice(-2); // giữ 2 số cuối
+      nextBufs[activePlayerIdx] = newBuf;
+
+      // cập nhật scores dựa trên buffer mới
+      setScores((prev) => {
+        const updated = [...prev];
+        const base = newBuf === "" ? 0 : Number(newBuf);
+        const delta = updated[activePlayerIdx].nearPin ? 1 : 0;
+        updated[activePlayerIdx].score = base;
+        updated[activePlayerIdx].pre_score = base + delta;
+        return updated;
+      });
+
+      return nextBufs;
+    });
+  };
+
+  // Near Pin
+  const setExclusiveNearPin = (targetIdx, checked) => {
     setScores((prev) => {
-      const updated = [...prev];
-      updated[activePlayerIdx][selectedField] = Number(num);
-      return updated;
+      return prev.map((s, i) => {
+        let delta = 0;
+
+        if (i === targetIdx) {
+          if (!s.nearPin && checked) delta = 1; // off -> on
+          if (s.nearPin && !checked) delta = 0; // on -> off
+          return {
+            ...s,
+            nearPin: checked,
+            pre_score: s.score + delta,
+          };
+        } else {
+          if (s.nearPin) {
+            // tắt nearPin người khác
+            return {
+              ...s,
+              nearPin: false,
+              pre_score: s.pre_score - 1,
+            };
+          }
+          return { ...s, pre_score: s.score };
+        }
+      });
     });
   };
 
@@ -166,39 +220,45 @@ const Score = () => {
       setShowError(false);
     }
 
-    setScores((prevScores) => {
-      const updatedScores = prevScores.map((score) => ({
-        ...score,
-        total_score: score.total_score + Number(score.score || 0),
-      }));
+    if (hole === 18) {
+      navigate("/result");
+    } else {
+      setScores((prevScores) => {
+        const updatedScores = prevScores.map((s) => ({
+          ...s,
+          total_score: s.total_score + Number(s.pre_score || 0),
+        }));
 
-      const resetScores = updatedScores.map((score) => ({
-        ...score,
-        score: 0,
-        reach: false,
-        nearPin: false,
-        teamColor: "red",
-      }));
+        const resetScores = updatedScores.map((s) => ({
+          ...s,
+          score: 0,
+          pre_score: 0,
+          reach: false,
+          nearPin: false,
+          teamColor: "red",
+        }));
 
-      return resetScores;
-    });
+        setInputBuffers(players.map(() => ""));
 
-    const holeData = {
-      hole,
-      par,
-      scores,
-    };
-    const allHolesData = JSON.parse(localStorage.getItem("allHolesData")) || {};
-    allHolesData[hole] = holeData;
-    localStorage.setItem("allHolesData", JSON.stringify(allHolesData));
+        return resetScores;
+      });
 
-    setHole((prevHole) => {
-      const nextHole = prevHole + 1;
-      if (nextHole > 18) {
-        return 18;
+      const holeData = { hole, par, scores };
+      const allHolesDataNow =
+        JSON.parse(localStorage.getItem("allHolesData")) || {};
+      allHolesDataNow[hole] = holeData;
+      localStorage.setItem("allHolesData", JSON.stringify(allHolesDataNow));
+
+      const nextHole = Math.min(hole + 1, 18);
+      const allHolesData =
+        JSON.parse(localStorage.getItem("allHolesData")) || {};
+      if (allHolesData[nextHole]) {
+        delete allHolesData[nextHole];
+        localStorage.setItem("allHolesData", JSON.stringify(allHolesData));
       }
-      return nextHole;
-    });
+
+      setHole((prevHole) => Math.min(prevHole + 1, 18));
+    }
   };
 
   const handlePreHole = () => {
@@ -219,6 +279,9 @@ const Score = () => {
 
   return (
     <div className="container">
+      <h2 className="title">Score Calculator</h2>
+      <p className="subtitle">A simple way to track your game points.</p>
+
       <div className="form_container">
         {showError && (
           <div className="error-modal">
@@ -277,7 +340,11 @@ const Score = () => {
                 >
                   <div className="player-name">{name}</div>
                   <div className="total_score">{scores[idx].total_score}</div>
-                  <div className="pre_score">+({scores[idx].score})</div>
+                  <div className="pre_score">(+{scores[idx].pre_score})</div>
+
+                  {/* Near Pin label */}
+                  {scores[idx].nearPin && <div className="pin-label">ニピ</div>}
+
                   {color && (
                     <span className={`team-badge team-${color}`}>
                       {color === "red" ? "Red" : "Blue"}
@@ -357,13 +424,19 @@ const Score = () => {
                   <input
                     type="checkbox"
                     checked={!!scores[activePlayerIdx][key]}
-                    onChange={(e) =>
-                      setScores((prev) => {
-                        const next = [...prev];
-                        next[activePlayerIdx][key] = e.target.checked;
-                        return next;
-                      })
-                    }
+                    onChange={(e) => {
+                      if (key === "nearPin") {
+                        // độc quyền nearPin trong 1 hole
+                        setExclusiveNearPin(activePlayerIdx, e.target.checked);
+                      } else {
+                        // các bonus khác giữ nguyên cách cũ
+                        setScores((prev) => {
+                          const next = [...prev];
+                          next[activePlayerIdx][key] = e.target.checked;
+                          return next;
+                        });
+                      }
+                    }}
                   />
                   {label}
                 </label>
@@ -380,7 +453,7 @@ const Score = () => {
             Pre
           </button>
           <button type="button" onClick={handleNextHole}>
-            Next
+            {hole === 18 ? "Finish" : "Next"}
           </button>
         </div>
       </div>
