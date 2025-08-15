@@ -11,21 +11,29 @@ function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedSetup = localStorage.getItem("gameSetup");
-    if (savedSetup) {
-      const gameData = JSON.parse(savedSetup);
-      setCourse(gameData.course || "");
-      setDate(gameData.date || new Date().toISOString().split("T")[0]);
-      console.log(gameData.players);
-      setPlayers(gameData.players || ["", "", "", ""]);
+    const savedSetupRaw = localStorage.getItem("gameSetup");
+    if (savedSetupRaw) {
+      try {
+        const saved = JSON.parse(savedSetupRaw);
+        setCourse(saved.course || "");
+        setDate(saved.date || new Date().toISOString().split("T")[0]);
+        setPlayers(
+          Array.isArray(saved.players) && saved.players.length
+            ? saved.players
+            : ["", "", "", ""]
+        );
+      } catch {
+        // Nếu parse lỗi thì reset
+        setCourse("");
+        setDate(new Date().toISOString().split("T")[0]);
+        setPlayers(["", "", "", ""]);
+      }
     } else {
       setCourse("");
       setDate(new Date().toISOString().split("T")[0]);
       setPlayers(["", "", "", ""]);
     }
-
-    // Sau khi load dữ liệu xong, set loading thành false
-    setLoading(false); // Đảm bảo nút Set Rules được bật
+    setLoading(false);
   }, []);
 
   const handlePlayerChange = (index, value) => {
@@ -56,20 +64,31 @@ function Home() {
     }
     setErrors({});
 
-    if (enteredPlayers.length === 3) {
-      enteredPlayers.push("Dummy");
-    }
+    // Nếu nhập đúng 3 người thì thêm Dummy
+    const finalPlayers =
+      enteredPlayers.length === 3
+        ? [...enteredPlayers, "Dummy"]
+        : enteredPlayers;
+
+    // >>> QUAN TRỌNG: Merge với dữ liệu cũ để giữ rule/front/back/reachValue
+    const prev = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("gameSetup")) || {};
+      } catch {
+        return {};
+      }
+    })();
 
     const payload = {
+      ...prev, // giữ lại frontname, backname, rules, reachValue, v.v.
       course: course.trim(),
       date,
-      players: enteredPlayers, // Đảm bảo players được lưu đúng
+      players: finalPlayers,
     };
 
-    // Lưu dữ liệu vào localStorage
     localStorage.setItem("gameSetup", JSON.stringify(payload));
-
     console.log("Game Setup:", payload);
+
     navigate("/rule");
   };
 
@@ -80,6 +99,7 @@ function Home() {
 
       <form className="form_container" onSubmit={handleSubmit} noValidate>
         <h3>Game Setup</h3>
+
         <label>Golf Course</label>
         <input
           type="text"

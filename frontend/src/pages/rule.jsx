@@ -16,7 +16,6 @@ const options = [
 function Rule() {
   const navigate = useNavigate();
 
-  // Khởi tạo state
   const [course, setCourse] = useState("");
   const [date, setDate] = useState("");
   const [players, setPlayers] = useState([]);
@@ -25,10 +24,10 @@ function Rule() {
   const [rules, setRules] = useState(
     options.reduce((acc, opt) => ({ ...acc, [opt]: false }), {})
   );
+  const [reachValue, setReachValue] = useState(3); // default 3
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    // Lấy dữ liệu game setup từ localStorage khi trang Rule được tải
     const savedSetup = JSON.parse(localStorage.getItem("gameSetup"));
     if (savedSetup) {
       setCourse(savedSetup.course || "");
@@ -37,6 +36,9 @@ function Rule() {
       setFrontName(savedSetup.frontname || "前半");
       setBackName(savedSetup.backname || "後半");
       setRules(savedSetup.rules || {});
+      if (savedSetup.reachValue) {
+        setReachValue(savedSetup.reachValue);
+      }
     }
   }, []);
 
@@ -46,8 +48,8 @@ function Rule() {
 
   const validate = () => {
     const errs = {};
-    if (!frontname.trim()) errs.frontname = "※前半名を入力してください。"; // Front 9
-    if (!backname.trim()) errs.backname = "※後半名を入力してください。"; // Back 9
+    if (!frontname.trim()) errs.frontname = "※前半名を入力してください。";
+    if (!backname.trim()) errs.backname = "※後半名を入力してください。";
     return errs;
   };
 
@@ -67,13 +69,10 @@ function Rule() {
       frontname: frontname.trim(),
       backname: backname.trim(),
       rules,
+      reachValue: rules["Reach Declaration"] ? reachValue : null,
     };
 
-    console.log("Rule Settings:", payload);
-
-    // Lưu vào localStorage các thay đổi
     localStorage.setItem("gameSetup", JSON.stringify(payload));
-
     navigate("/score");
   };
 
@@ -116,16 +115,45 @@ function Rule() {
 
         <div className="rule_container">
           {options.map((rule) => (
-            <div key={rule} className="rule_item">
-              <span>{rule}</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={rules[rule]}
-                  onChange={() => toggleRule(rule)}
-                />
-                <span className="slider"></span>
-              </label>
+            <div
+              key={rule}
+              className="rule_item"
+              style={{ flexDirection: "column", alignItems: "flex-start" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  width: "100%",
+                }}
+              >
+                <span>{rule}</span>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={rules[rule]}
+                    onChange={() => toggleRule(rule)}
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+
+              {rule === "Reach Declaration" && rules["Reach Declaration"] && (
+                <select
+                  value={reachValue}
+                  className="Reach-Select"
+                  onChange={(e) => setReachValue(parseInt(e.target.value))}
+                >
+                  {[...Array(8)].map((_, idx) => {
+                    const val = idx + 3;
+                    return (
+                      <option key={val} value={val}>
+                        {val}
+                      </option>
+                    );
+                  })}
+                </select>
+              )}
             </div>
           ))}
         </div>
@@ -134,9 +162,7 @@ function Rule() {
           <button id="back_btn" type="button" onClick={() => navigate("/")}>
             Back
           </button>
-          <button type="submit" disabled={false}>
-            Start Scoring
-          </button>
+          <button type="submit">Start Scoring</button>
         </div>
       </form>
     </div>

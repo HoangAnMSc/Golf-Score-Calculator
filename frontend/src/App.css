@@ -7,8 +7,7 @@ body {
 }
 
 .container {
-  width: 100%;
-  max-width: 425px;
+  width: 425px;
   margin: 0 auto;
   text-align: center;
 }
@@ -28,7 +27,7 @@ body {
 .form_container {
   background: white;
   padding: 30px;
-  margin: 0 20px;
+  /* margin: 0 20px; */
   gap: 10px;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
@@ -164,6 +163,11 @@ body {
   }
 }
 
+.Reach-Select{
+  margin-top: 5px;
+  padding: 4px 10px;
+  color: white;
+}
 
 /* Score Page ======================================================================*/
 .hole-wapper {
@@ -645,4 +649,130 @@ input[aria-invalid="true"] {
 
 .team-switch input:checked+.team-slider::before {
   transform: translateX(24px);
+}
+/* Scorecard Table ======================================================================*/
+
+:root {
+  --holesH: 42px;
+  --parH: 36px;
+}
+
+.scorecard-wrapper {
+  position: relative;
+  width: 100%;
+  max-height: 70vh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scorecard {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  text-align: center;
+}
+
+.scorecard th,
+.scorecard td {
+  border: 1px solid #ccc;
+  padding: 4px;
+  min-width: 28px;
+}
+
+.scorecard th:first-child,
+.scorecard td:first-child {
+  min-width: 60px;
+  font-weight: bold;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #f3f4f6;
+}
+
+.scorecard thead .holes-row th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: var(--holesH);
+  background-color: #1f3a5f;
+  color: white;
+  font-weight: bold;
+}
+
+.scorecard thead .par-row th,
+.scorecard thead .par-row td {
+  position: sticky;
+  top: var(--holesH);
+  z-index: 2;
+  height: var(--parH);
+  background-color: #e8f5e9;
+  font-weight: bold;
+}
+
+.scorecard thead .holes-row th:first-child {
+  z-index: 5;
+}
+
+.scorecard thead .par-row th:first-child {
+  left: 0;
+  z-index: 4;
+  background-color: #e8f5e9;
+}
+
+.scorecard .section-sum {
+  background-color: #f1c40f;
+  font-weight: bold;
+}
+
+/* Tổng cuối (合計) */
+.scorecard .grand-sum {
+  background-color: #2ecc71;
+  font-weight: bold;
+}
+
+/* Ô điểm & ký hiệu */
+.score-cell {
+  position: relative;
+}
+
+.cell-inner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+}
+
+.mark-reach {
+  font-size: 12px;
+  color: #ff5722;
+}
+
+/* △ Reach */
+.mark-nearpin {
+  font-size: 12px;
+  color: #2196f3;
+}
+
+/* ● Near Pin */
+
+/* Legend dưới bảng */
+.legend {
+  margin: 8px 20px;
+  text-align: left;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Quay ngang bảng */
+body.landscape-lock {
+  overflow: hidden;
 }
