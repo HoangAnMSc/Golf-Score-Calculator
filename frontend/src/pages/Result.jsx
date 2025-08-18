@@ -331,7 +331,7 @@ function Result() {
         )}
 
         {/* Controls */}
-        <div className="nav_bar" style={!isLandscape ? { marginTop: 250 } : {}}>
+        <div className="nav_bar" style={!isLandscape ? { marginTop: 255 } : {}}>
           <button
             id="back_btn"
             type="button"

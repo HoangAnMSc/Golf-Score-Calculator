@@ -139,20 +139,20 @@ function Rule() {
               </div>
 
               {rule === "Reach Declaration" && rules["Reach Declaration"] && (
-                <select
-                  value={reachValue}
-                  className="Reach-Select"
-                  onChange={(e) => setReachValue(parseInt(e.target.value))}
-                >
-                  {[...Array(8)].map((_, idx) => {
-                    const val = idx + 3;
-                    return (
-                      <option key={val} value={val}>
-                        {val}
-                      </option>
-                    );
-                  })}
-                </select>
+                <div className="reach-slider-container">
+                  <input
+                    type="range"
+                    min={3}
+                    max={16}
+                    step={1}
+                    value={reachValue}
+                    onChange={(e) => setReachValue(Number(e.target.value))}
+                    className="reach-slider"
+                    style={{ "--val": reachValue }}
+                    aria-label="Reach value"
+                  />
+                  <span className="reach-value">{reachValue}</span>
+                </div>
               )}
             </div>
           ))}

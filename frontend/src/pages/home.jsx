@@ -23,7 +23,6 @@ function Home() {
             : ["", "", "", ""]
         );
       } catch {
-        // Nếu parse lỗi thì reset
         setCourse("");
         setDate(new Date().toISOString().split("T")[0]);
         setPlayers(["", "", "", ""]);
@@ -64,13 +63,13 @@ function Home() {
     }
     setErrors({});
 
-    // Nếu nhập đúng 3 người thì thêm Dummy
+    // Dummy
     const finalPlayers =
       enteredPlayers.length === 3
         ? [...enteredPlayers, "Dummy"]
         : enteredPlayers;
 
-    // >>> QUAN TRỌNG: Merge với dữ liệu cũ để giữ rule/front/back/reachValue
+    // Merge Data
     const prev = (() => {
       try {
         return JSON.parse(localStorage.getItem("gameSetup")) || {};
@@ -80,7 +79,7 @@ function Home() {
     })();
 
     const payload = {
-      ...prev, // giữ lại frontname, backname, rules, reachValue, v.v.
+      ...prev,
       course: course.trim(),
       date,
       players: finalPlayers,

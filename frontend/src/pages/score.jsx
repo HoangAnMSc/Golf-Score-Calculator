@@ -95,7 +95,8 @@ const Score = () => {
     if (savedHoleData && savedHoleData[hole]) {
       const holeData = savedHoleData[hole];
       setPar(holeData.par);
-      setScores(holeData.scores);
+      const s = holeData.scores || [];
+      setScores(withCalcIfReady(s));
     }
   }, []);
 
@@ -104,20 +105,18 @@ const Score = () => {
 
   const handleNumberClick = (num) => {
     const digit = String(num);
-
-    setInputBuffers((prevBufs) => {
-      const nextBufs = [...prevBufs];
-      const newBuf = (nextBufs[activePlayerIdx] + digit).slice(-2); // giữ 2 số cuối
+    setInputBuffers((prev) => {
+      const nextBufs = [...prev];
+      const newBuf = (nextBufs[activePlayerIdx] + digit).slice(-2);
       nextBufs[activePlayerIdx] = newBuf;
 
-      // cập nhật scores dựa trên buffer mới
-      setScores((prev) => {
-        const updated = [...prev];
-        const base = newBuf === "" ? 0 : Number(newBuf);
-        const delta = updated[activePlayerIdx].nearPin ? 1 : 0;
-        updated[activePlayerIdx].score = base;
-        updated[activePlayerIdx].pre_score = base + delta;
-        return updated;
+      setScores((prevScores) => {
+        const next = prevScores.map((x, i) =>
+          i === activePlayerIdx
+            ? { ...x, score: newBuf ? Number(newBuf) : 0 }
+            : x
+        );
+        return withCalcIfReady(next);
       });
 
       return nextBufs;
@@ -127,29 +126,11 @@ const Score = () => {
   // NearPinのロジック
   const setExclusiveNearPin = (targetIdx, checked) => {
     setScores((prev) => {
-      return prev.map((s, i) => {
-        let delta = 0;
-
-        if (i === targetIdx) {
-          if (!s.nearPin && checked) delta = 1; // off -> on
-          if (s.nearPin && !checked) delta = 0; // on -> off
-          return {
-            ...s,
-            nearPin: checked,
-            pre_score: s.score + delta,
-          };
-        } else {
-          if (s.nearPin) {
-            // tắt nearPin người khác
-            return {
-              ...s,
-              nearPin: false,
-              pre_score: s.pre_score - 1,
-            };
-          }
-          return { ...s, pre_score: s.score };
-        }
-      });
+      const toggled = prev.map((p, i) => ({
+        ...p,
+        nearPin: i === targetIdx ? checked : false,
+      }));
+      return withCalcIfReady(toggled);
     });
   };
 
@@ -165,38 +146,7 @@ const Score = () => {
 
   //出フィレ
   const handleExport = () => {
-    const rows = players.map((name, i) => ({
-      player: name,
-      score: Number(scores[i].score || 0),
-      total_score: Number(scores[i].total_score || 0),
-      reach: !!scores[i].reach,
-      nearPin: !!scores[i].nearPin,
-      teamColor: scores[i].teamColor || "",
-    }));
-
-    const payload = {
-      course: courseName,
-      front9: frontName,
-      hole: `H${hole}`,
-      par,
-      exportedAt: new Date().toISOString(),
-      rows,
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `golfscore_${new Date()
-      .toISOString()
-      .slice(0, 19)
-      .replace(/[:T]/g, "-")}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    navigate("/result");
   };
 
   //Merge変更データ
@@ -224,6 +174,90 @@ const Score = () => {
     localStorage.setItem("allHolesData", JSON.stringify(allHolesData));
   };
 
+  const readyForCalc = (arr) => {
+    const allScored = arr.every((p) => Number(p.score) > 0);
+    const red = arr.filter((p) => p.teamColor === "red").length;
+    const blue = arr.filter((p) => p.teamColor === "blue").length;
+    return allScored && red === 2 && blue === 2;
+  };
+
+  const withCalcIfReady = (next) => {
+    return readyForCalc(next)
+      ? recalcPreScoresForHole(next)
+      : next.map((p) => ({ ...p, pre_score: 0 }));
+  };
+
+  //ゴルフ点数計算のロジック
+  const recalcPreScoresForHole = (arr) => {
+    const s = arr.map((v) => ({ ...v }));
+    const raw = s.map((v) => Number(v.score || 0));
+
+    // Team
+    const redIdx = s
+      .map((p, i) => (p.teamColor === "red" ? i : -1))
+      .filter((i) => i >= 0);
+    const blueIdx = s
+      .map((p, i) => (p.teamColor === "blue" ? i : -1))
+      .filter((i) => i >= 0);
+
+    // parent/child
+    const [parentRed, childRed] =
+      redIdx.length === 2
+        ? raw[redIdx[0]] <= raw[redIdx[1]]
+          ? [redIdx[0], redIdx[1]]
+          : [redIdx[1], redIdx[0]]
+        : [null, null];
+
+    const [parentBlue, childBlue] =
+      blueIdx.length === 2
+        ? raw[blueIdx[0]] <= raw[blueIdx[1]]
+          ? [blueIdx[0], blueIdx[1]]
+          : [blueIdx[1], blueIdx[0]]
+        : [null, null];
+
+    let redPts = 0,
+      bluePts = 0;
+
+    if (parentRed != null && parentBlue != null) {
+      // Parent logic
+      if (raw[parentRed] < raw[parentBlue]) {
+        redPts += Math.max(2, raw[parentBlue] - raw[parentRed]);
+        bluePts += -redPts;
+      } else if (raw[parentRed] > raw[parentBlue]) {
+        bluePts += Math.max(2, raw[parentRed] - raw[parentBlue]);
+        redPts += -bluePts;
+      }
+
+      // Child logic
+      if (raw[childRed] < raw[childBlue]) {
+        redPts += 1;
+        bluePts -= 1;
+      } else if (raw[childRed] > raw[childBlue]) {
+        bluePts += 1;
+        redPts -= 1;
+      }
+    }
+
+    // NearPin bonus TEAM
+    const redHasNearPin = redIdx.some((i) => !!s[i].nearPin);
+    const blueHasNearPin = blueIdx.some((i) => !!s[i].nearPin);
+    if (redHasNearPin) {
+      redPts += 1;
+      bluePts -= 1;
+    }
+
+    if (blueHasNearPin) {
+      bluePts += 1;
+      redPts -= 1;
+    }
+
+    // map pre_score for each player
+    return s.map((v, i) => ({
+      ...v,
+      pre_score: v.teamColor === "red" ? redPts : bluePts,
+    }));
+  };
+
   //Nextブータン
   const handleNextHole = () => {
     const allScoresEntered = scores.every((score) => score.score !== 0);
@@ -248,16 +282,16 @@ const Score = () => {
       setShowError(false);
     }
 
-    // Lưu hole hiện tại
+    // Save hole rightnow
     saveHoleDataDiff(hole, par, scores);
 
-    // Nếu là hole cuối thì tới kết quả
+    // Hole 18 => Result
     if (hole === 18) {
       navigate("/result");
       return;
     }
 
-    // Cập nhật total_score cho hole tiếp theo nếu khác
+    // Update total_score
     const allHolesData = JSON.parse(localStorage.getItem("allHolesData")) || {};
     const currentHoleData = allHolesData[hole];
     const nextHole = hole + 1;
@@ -283,10 +317,9 @@ const Score = () => {
       }
     }
 
-    // Sang hole kế tiếp
+    //Next Hole Logic
     setHole(nextHole);
 
-    // Nếu chưa có dữ liệu hole sau thì reset rỗng, nhưng giữ total_score = tổng trước + pre_score trước
     if (!allHolesData[nextHole]?.scores) {
       const totals = currentHoleData?.scores
         ? currentHoleData.scores.map(
@@ -342,15 +375,12 @@ const Score = () => {
           </div>
         )}
 
-        <button type="button" className="export_btn" onClick={handleExport}>
-          Export File
-        </button>
+        <h3 className="course_title">{courseName}'s Course</h3>
 
         <div className="hole-wapper">
-          <div className="course_content">
-            <span>Course</span>
-            <div className="course_title">{courseName}</div>
-          </div>
+          <button type="button" className="total_result" onClick={handleExport}>
+            Result
+          </button>
           <div className="hole-content">
             <span>{frontName}</span>
             <span>H{hole}</span>
@@ -390,7 +420,11 @@ const Score = () => {
                 >
                   <div className="player-name">{name}</div>
                   <div className="total_score">{scores[idx].total_score}</div>
-                  <div className="pre_score">(+{scores[idx].pre_score})</div>
+                  <div className="pre_score">
+                    {scores[idx].total_score}(
+                    {scores[idx].pre_score >= 0 ? "+" : ""}
+                    {scores[idx].pre_score})
+                  </div>
 
                   {/* Near Pin label */}
                   {scores[idx].nearPin && <div className="pin-label">ニピ</div>}
@@ -448,11 +482,12 @@ const Score = () => {
               checked={scores[activePlayerIdx].teamColor === "blue"}
               onChange={(e) => {
                 setScores((prev) => {
-                  const next = [...prev];
-                  next[activePlayerIdx].teamColor = e.target.checked
-                    ? "blue"
-                    : "red";
-                  return next;
+                  const next = prev.map((p, i) =>
+                    i === activePlayerIdx
+                      ? { ...p, teamColor: e.target.checked ? "blue" : "red" }
+                      : p
+                  );
+                  return withCalcIfReady(next);
                 });
               }}
               onClick={(e) => e.stopPropagation()}
@@ -476,10 +511,8 @@ const Score = () => {
                     checked={!!scores[activePlayerIdx][key]}
                     onChange={(e) => {
                       if (key === "nearPin") {
-                        // độc quyền nearPin trong 1 hole
                         setExclusiveNearPin(activePlayerIdx, e.target.checked);
                       } else {
-                        // các bonus khác giữ nguyên cách cũ
                         setScores((prev) => {
                           const next = [...prev];
                           next[activePlayerIdx][key] = e.target.checked;
