@@ -154,23 +154,30 @@ const Score = () => {
     const allHolesData = JSON.parse(localStorage.getItem("allHolesData")) || {};
     const existing = allHolesData[h] || { hole: h, par: parVal, scores: [] };
 
-    const nextPar = parVal !== existing.par ? parVal : existing.par;
+    // re-calc pre_score
+    const recomputed = withCalcIfReady(scoresArr);
 
-    const mergedScores = scoresArr.map((curr, i) => {
+    const mergedScores = recomputed.map((curr, i) => {
       const prev = existing.scores?.[i] || {};
-      const merged = { ...prev };
-      Object.keys(curr).forEach((k) => {
-        if (curr[k] !== prev[k]) merged[k] = curr[k];
+      const out = { ...prev };
+
+      ["score", "teamColor", "nearPin", "reach", "total_score"].forEach((k) => {
+        if (curr[k] !== prev[k]) out[k] = curr[k];
       });
-      return merged;
+
+      // pre_scoreは最新
+      out.pre_score = curr.pre_score;
+
+      return out;
     });
 
     allHolesData[h] = {
       ...existing,
       hole: h,
-      par: nextPar,
+      par: parVal !== existing.par ? parVal : existing.par,
       scores: mergedScores,
     };
+
     localStorage.setItem("allHolesData", JSON.stringify(allHolesData));
   };
 
