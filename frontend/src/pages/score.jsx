@@ -39,6 +39,7 @@ const Score = () => {
   const ruleKeyMap = {
     "Reach Declaration": "reach",
     "Near Pin Bonus": "nearPin",
+    "Custom Box": "custom",
   };
 
   const enabledBonusKeys = rulesFromRule
@@ -59,11 +60,13 @@ const Score = () => {
     return players.map((_, idx) => {
       const previousScore = previousHoleData.scores[idx] || {
         score: 0,
+        gross_score: 0,
         total_score: 0,
       };
       return {
         score: 0,
         pre_score: 0,
+        gross_score: previousScore.gross_score + previousScore.score || 0,
         total_score: previousScore.total_score + previousScore.pre_score || 0,
         reach: false,
         nearPin: false,
@@ -100,6 +103,17 @@ const Score = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (par !== 3) {
+      setScores((prev) => {
+        const cleared = prev.map((p) => ({ ...p, nearPin: false }));
+        return withCalcIfReady(cleared);
+      });
+    } else {
+      setScores((prev) => withCalcIfReady(prev));
+    }
+  }, [par]);
+
   //NUMPADのロジック
   const [inputBuffers, setInputBuffers] = useState(() => players.map(() => ""));
 
@@ -125,6 +139,8 @@ const Score = () => {
 
   // NearPinのロジック
   const setExclusiveNearPin = (targetIdx, checked) => {
+    if (par !== 3) return;
+
     setScores((prev) => {
       const toggled = prev.map((p, i) => ({
         ...p,
@@ -138,6 +154,7 @@ const Score = () => {
   const bonusOptions = [
     { key: "reach", label: "Reach" },
     { key: "nearPin", label: "Near Pin" },
+    { key: "custom", label: "Custom Box" },
   ];
 
   const visibleBonusOptions = enabledBonusKeys
@@ -161,7 +178,15 @@ const Score = () => {
       const prev = existing.scores?.[i] || {};
       const out = { ...prev };
 
-      ["score", "teamColor", "nearPin", "reach", "total_score"].forEach((k) => {
+      [
+        "score",
+        "teamColor",
+        "nearPin",
+        "reach",
+        "custom",
+        "gross_score",
+        "total_score",
+      ].forEach((k) => {
         if (curr[k] !== prev[k]) out[k] = curr[k];
       });
 
@@ -228,20 +253,23 @@ const Score = () => {
     if (parentRed != null && parentBlue != null) {
       // Parent logic
       if (raw[parentRed] < raw[parentBlue]) {
-        redPts += Math.max(2, raw[parentBlue] - raw[parentRed]);
-        bluePts += -redPts;
-      } else if (raw[parentRed] > raw[parentBlue]) {
-        bluePts += Math.max(2, raw[parentRed] - raw[parentBlue]);
-        redPts += -bluePts;
-      }
+        redPts += raw[parentBlue] - raw[parentRed];
+        bluePts -= redPts;
 
-      // Child logic
-      if (raw[childRed] < raw[childBlue]) {
-        redPts += 1;
-        bluePts -= 1;
-      } else if (raw[childRed] > raw[childBlue]) {
-        bluePts += 1;
-        redPts -= 1;
+        // Child logic
+        if (raw[childRed] < raw[childBlue]) {
+          redPts += 1;
+          bluePts -= 1;
+        }
+      } else if (raw[parentRed] > raw[parentBlue]) {
+        bluePts += raw[parentRed] - raw[parentBlue];
+        redPts -= bluePts;
+
+        // Child logic
+        if (raw[childRed] > raw[childBlue]) {
+          bluePts += 1;
+          redPts -= 1;
+        }
       }
     }
 
@@ -249,13 +277,23 @@ const Score = () => {
     const redHasNearPin = redIdx.some((i) => !!s[i].nearPin);
     const blueHasNearPin = blueIdx.some((i) => !!s[i].nearPin);
     if (redHasNearPin) {
-      redPts += 1;
-      bluePts -= 1;
+      if (redPts > 0) {
+        redPts += 1;
+        bluePts -= 1;
+      } else if (redPts < 0) {
+        redPts -= 1;
+        bluePts += 1;
+      }
     }
 
     if (blueHasNearPin) {
-      bluePts += 1;
-      redPts -= 1;
+      if (bluePts > 0) {
+        bluePts += 1;
+        redPts -= 1;
+      } else if (bluePts < 0) {
+        bluePts -= 1;
+        redPts += 1;
+      }
     }
 
     // map pre_score for each player
@@ -308,18 +346,30 @@ const Score = () => {
         (s) => Number(s.total_score || 0) + Number(s.pre_score || 0)
       );
 
+      const prevGross = currentHoleData.scores.map(
+        (s) => Number(s.gross_score || 0) + Number(s.score || 0)
+      );
+
       if (allHolesData[nextHole]?.scores) {
-        // Có dữ liệu hole sau -> chỉ update nếu total_score khác
         const updatedScores = allHolesData[nextHole].scores.map((s, idx) => {
+          let updated = { ...s };
+
           if (s.total_score !== prevTotals[idx]) {
-            return { ...s, total_score: prevTotals[idx] };
+            updated.total_score = prevTotals[idx];
           }
-          return s;
+
+          if (s.gross_score !== prevGross[idx]) {
+            updated.gross_score = prevGross[idx];
+          }
+
+          return updated;
         });
+
         allHolesData[nextHole] = {
           ...allHolesData[nextHole],
           scores: updatedScores,
         };
+
         localStorage.setItem("allHolesData", JSON.stringify(allHolesData));
       }
     }
@@ -328,17 +378,24 @@ const Score = () => {
     setHole(nextHole);
 
     if (!allHolesData[nextHole]?.scores) {
-      const totals = currentHoleData?.scores
-        ? currentHoleData.scores.map(
-            (s) => Number(s.total_score || 0) + Number(s.pre_score || 0)
-          )
-        : [];
+      const prevScores = currentHoleData?.scores || [];
+
+      // cộng dồn từ hole hiện tại để mang sang hole kế
+      const carryTotals = prevScores.map(
+        (s) => Number(s.total_score || 0) + Number(s.pre_score || 0)
+      );
+      const carryGross = prevScores.map(
+        (s) => Number(s.gross_score || 0) + Number(s.score || 0)
+      );
+
       setScores(
         players.map((_, idx) => ({
           score: 0,
           pre_score: 0,
-          total_score: totals[idx] || 0,
+          gross_score: carryGross[idx] || 0, // gậy lũy kế (nếu dùng)
+          total_score: carryTotals[idx] || 0, // điểm team lũy kế
           reach: false,
+          custom: 1,
           nearPin: false,
           teamColor: "red",
         }))
@@ -426,7 +483,7 @@ const Score = () => {
                   onClick={() => setActivePlayerIdx(idx)}
                 >
                   <div className="player-name">{name}</div>
-                  <div className="total_score">{scores[idx].total_score}</div>
+                  <div className="gross_score">{scores[idx].gross_score}</div>
                   <div className="pre_score">
                     {scores[idx].total_score}(
                     {scores[idx].pre_score >= 0 ? "+" : ""}
@@ -504,40 +561,82 @@ const Score = () => {
           <span className="team-label-blue">Blue</span>
         </div>
 
-        {visibleBonusOptions.length > 0 && (
-          <div>
-            {visibleBonusOptions.map(({ key, label }) => (
+        {visibleBonusOptions.map(({ key, label }) => {
+          const isNearPin = key === "nearPin";
+          const isDisabled = isNearPin && par !== 3;
+
+          if (key === "custom") {
+            return (
               <div
                 key={key}
-                className="checkbox-row"
+                className="select-row"
                 onClick={(e) => e.stopPropagation()}
               >
-                <label className="checkbox-item">
-                  <input
-                    type="checkbox"
-                    checked={!!scores[activePlayerIdx][key]}
-                    onChange={(e) => {
-                      if (key === "nearPin") {
-                        setExclusiveNearPin(activePlayerIdx, e.target.checked);
-                      } else {
-                        setScores((prev) => {
-                          const next = [...prev];
-                          next[activePlayerIdx][key] = e.target.checked;
-                          return next;
-                        });
-                      }
-                    }}
-                  />
-                  {label}
-                </label>
+                <label>{label}</label>
+                <select
+                  className="select-item"
+                  value={scores[activePlayerIdx].customValue || 1}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setScores((prev) => {
+                      const next = [...prev];
+                      next[activePlayerIdx].customValue = val;
+                      return next;
+                    });
+                  }}
+                >
+                  {Array.from({ length: 9 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          }
+
+          return (
+            <div
+              key={key}
+              className="checkbox-row"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <label
+                className={`checkbox-item ${
+                  isDisabled ? "nearpin-disabled" : ""
+                }`}
+                title={
+                  isDisabled
+                    ? "Par が 3 でない場合、ニアピンは適用されません。"
+                    : ""
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={isDisabled ? false : !!scores[activePlayerIdx][key]}
+                  onChange={(e) => {
+                    if (isDisabled) return;
+                    if (key === "nearPin") {
+                      setExclusiveNearPin(activePlayerIdx, e.target.checked);
+                    } else {
+                      setScores((prev) => {
+                        const next = [...prev];
+                        next[activePlayerIdx][key] = e.target.checked;
+                        return withCalcIfReady(next);
+                      });
+                    }
+                  }}
+                  disabled={isDisabled}
+                />
+                {label}
+              </label>
+            </div>
+          );
+        })}
 
         <div className="nav_bar">
           <button id="back_btn" type="button" onClick={() => navigate("/rule")}>
-            Back
+            Setting
           </button>
           <button type="button" onClick={handlePreHole}>
             Pre

@@ -17,7 +17,7 @@ function Result() {
   const navigate = useNavigate();
   const containerRef = useRef(null);
 
-  // ===== Landscape toggle (pure CSS inline, không cần screen.orientation) =====
+  // ===== Landscape toggle (inline CSS) =====
   const [isLandscape, setIsLandscape] = useState(false);
   const resizeHandlerRef = useRef(null);
 
@@ -29,12 +29,11 @@ function Result() {
 
     document.body.classList.add("landscape-lock");
 
-    // Xoay toàn bộ container theo kích thước thật của màn hình
     el.style.position = "fixed";
     el.style.top = "0";
     el.style.left = "0";
-    el.style.width = `${vh}px`; // chiều ngang sau khi xoay
-    el.style.height = `${vw}px`; // chiều dọc sau khi xoay
+    el.style.width = `${vh}px`;
+    el.style.height = `${vw}px`;
     el.style.maxWidth = "none";
     el.style.transform = "rotate(90deg) translateY(-100%)";
     el.style.transformOrigin = "top left";
@@ -98,7 +97,7 @@ function Result() {
     rules: {},
   });
 
-  const allHolesData = safeJSONParse("allHolesData", {}); // có thể là [] hoặc { "1": {...} }
+  const allHolesData = safeJSONParse("allHolesData", {});
   const holes = Array.from({ length: 18 }, (_, i) => i + 1);
 
   const firstHoleScoresLen = (() => {
@@ -106,6 +105,7 @@ function Result() {
       ? allHolesData[0]
       : allHolesData["1"] || allHolesData[1];
     return h1?.scores?.length ?? 0;
+    // eslint-disable-next-line
   })();
 
   const players =
@@ -127,7 +127,7 @@ function Result() {
     .reduce((a, b) => a + (Number(b) || 0), 0);
   const parTotal = parFront + parBack;
 
-  // ===== Export JSON (dùng pre_score tuyệt đối) =====
+  // ===== Export JSON =====
   const handleExport = () => {
     const scoresPayload = players.map((name, pIdx) => {
       const perHole = holes.map((h) => {
@@ -185,15 +185,30 @@ function Result() {
     URL.revokeObjectURL(url);
   };
 
-  // ===== Helpers render: dùng pre_score tuyệt đối =====
+  // ===== Helpers render =====
   const getCell = (holeIndex, playerIndex) => {
-    const h = holeIndex + 1; // 1..18
+    const h = holeIndex + 1;
     const s = getHoleObj(h)?.scores?.[playerIndex] ?? {};
-    const val = typeof s.pre_score === "number" ? s.pre_score : "";
-    return { pre_score: val, reach: !!s.reach, nearPin: !!s.nearPin };
+    const score_val = typeof s.score === "number" ? s.score : "";
+    const pre_val = typeof s.pre_score === "number" ? s.pre_score : "";
+    return {
+      score: score_val,
+      pre_score: pre_val,
+      reach: !!s.reach,
+      nearPin: !!s.nearPin,
+    };
   };
 
-  const sumRange = (playerIndex, startHole, endHole) => {
+  const sumGross = (playerIndex, startHole, endHole) => {
+    let sum = 0;
+    for (let h = startHole; h <= endHole; h++) {
+      const v = getHoleObj(h)?.scores?.[playerIndex]?.score;
+      if (typeof v === "number" && !Number.isNaN(v)) sum += v;
+    }
+    return sum || 0;
+  };
+
+  const sumScore = (playerIndex, startHole, endHole) => {
     let sum = 0;
     for (let h = startHole; h <= endHole; h++) {
       const v = getHoleObj(h)?.scores?.[playerIndex]?.pre_score;
@@ -226,6 +241,10 @@ function Result() {
             <thead>
               <tr className="holes-row">
                 <th style={{ width: 80 }}>ホール</th>
+
+                {/* NEW:種別*/}
+                <th className="type-col">種別</th>
+
                 {holes.slice(0, 9).map((h) => (
                   <th key={`h-out-${h}`}>{h}</th>
                 ))}
@@ -236,8 +255,11 @@ function Result() {
                 <th className="section-sum">{setup.backname || "後半"}</th>
                 <th className="grand-sum">合計</th>
               </tr>
+
               <tr className="par-row">
                 <th>Par</th>
+                <th></th>
+
                 {parByHole.slice(0, 9).map((p, i) => (
                   <td key={`par-out-${i}`}>{p}</td>
                 ))}
@@ -262,19 +284,37 @@ function Result() {
 
             <tbody>
               {players.map((name, pIdx) => {
-                const frontSum = sumRange(pIdx, 1, 9);
-                const backSum = sumRange(pIdx, 10, 18);
-                const total = frontSum + backSum;
+                const frontScore = sumScore(pIdx, 1, 9);
+                const frontGross = sumGross(pIdx, 1, 9);
+                const backScore = sumScore(pIdx, 10, 18);
+                const backGross = sumGross(pIdx, 10, 18);
+                const grossTotal = frontGross + backGross;
+                const scoreTotal = frontScore + backScore;
 
                 return (
                   <tr key={`player-${pIdx}`} className="player-row">
+                    {/* Tên player */}
                     <th className="player-name">{name}</th>
+
+                    {/* Gross/Score*/}
+                    <td className="type-col">
+                      <div className="type-line">スコア</div>
+                      <hr />
+                      <div className="type-line">ポイント</div>
+                    </td>
 
                     {/* OUT holes */}
                     {holes.slice(0, 9).map((_, i) => {
-                      const { pre_score, reach, nearPin } = getCell(i, pIdx);
+                      const { score, pre_score, reach, nearPin } = getCell(
+                        i,
+                        pIdx
+                      );
                       return (
                         <td key={`p${pIdx}-out-${i}`} className="score-cell">
+                          <div className="cell-inner">
+                            <span className="score-val">{score}</span>
+                          </div>
+                          <hr />
                           <div className="cell-inner">
                             {reach && <span className="mark-reach">△</span>}
                             {nearPin && <span className="mark-nearpin">●</span>}
@@ -284,18 +324,27 @@ function Result() {
                       );
                     })}
 
-                    <td className="section-sum">{frontSum}</td>
+                    {/* 前半合計 */}
+                    <td className="section-sum">
+                      {frontGross}
+                      <hr />
+                      {frontScore}
+                    </td>
 
                     {/* IN holes */}
                     {holes.slice(9, 18).map((_, i) => {
-                      const holeIdx = 9 + i; // 0-based index
-                      const { pre_score, reach, nearPin } = getCell(
+                      const holeIdx = 9 + i;
+                      const { score, pre_score, reach, nearPin } = getCell(
                         holeIdx,
                         pIdx
                       );
                       return (
                         <td key={`p${pIdx}-in-${i}`} className="score-cell">
                           <div className="cell-inner">
+                            <span className="score-val">{score}</span>
+                          </div>
+                          <hr />
+                          <div className="cell-inner">
                             {reach && <span className="mark-reach">△</span>}
                             {nearPin && <span className="mark-nearpin">●</span>}
                             <span className="score-val">{pre_score}</span>
@@ -304,8 +353,19 @@ function Result() {
                       );
                     })}
 
-                    <td className="section-sum">{backSum}</td>
-                    <td className="grand-sum">{total}</td>
+                    {/* 後半合計 */}
+                    <td className="section-sum">
+                      {backGross}
+                      <hr />
+                      {backScore}
+                    </td>
+
+                    {/* 合計 */}
+                    <td className="grand-sum">
+                      {grossTotal}
+                      <hr />
+                      {scoreTotal}
+                    </td>
                   </tr>
                 );
               })}
@@ -313,7 +373,6 @@ function Result() {
           </table>
         </div>
 
-        {/* Legend (optional) */}
         {(setup?.rules?.["Reach Declaration"] ||
           setup?.rules?.["Near Pin Bonus"]) && (
           <div className="legend">
@@ -330,8 +389,7 @@ function Result() {
           </div>
         )}
 
-        {/* Controls */}
-        <div className="nav_bar" style={!isLandscape ? { marginTop: 255 } : {}}>
+        <div className="nav_bar" style={!isLandscape ? { marginTop: 200 } : {}}>
           <button
             id="back_btn"
             type="button"

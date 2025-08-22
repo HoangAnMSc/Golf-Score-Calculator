@@ -7,7 +7,7 @@ const options = [
   "Reach Declaration",
   "Birdie Bonus",
   "Near Pin Bonus",
-  "Draw Carryover",
+  "Custom Box",
   "Eagle Bonus",
   "Albatross Bonus",
   "Hole-in-One Bonus",
@@ -24,7 +24,7 @@ function Rule() {
   const [rules, setRules] = useState(
     options.reduce((acc, opt) => ({ ...acc, [opt]: false }), {})
   );
-  const [reachValue, setReachValue] = useState(3); // default 3
+  const [reachValue, setReachValue] = useState(3);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -140,18 +140,25 @@ function Rule() {
 
               {rule === "Reach Declaration" && rules["Reach Declaration"] && (
                 <div className="reach-slider-container">
-                  <input
-                    type="range"
-                    min={3}
-                    max={16}
-                    step={1}
-                    value={reachValue}
-                    onChange={(e) => setReachValue(Number(e.target.value))}
-                    className="reach-slider"
-                    style={{ "--val": reachValue }}
-                    aria-label="Reach value"
-                  />
-                  <span className="reach-value">{reachValue}</span>
+                  <div className="slider-wrapper">
+                    <input
+                      type="range"
+                      min={3}
+                      max={16}
+                      step={1}
+                      value={reachValue}
+                      onChange={(e) => setReachValue(Number(e.target.value))}
+                      className="reach-slider"
+                    />
+                    <span
+                      className="reach-value"
+                      style={{
+                        left: `${3 + ((reachValue - 3) / 13) * 95}%`,
+                      }}
+                    >
+                      Max:{reachValue}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
