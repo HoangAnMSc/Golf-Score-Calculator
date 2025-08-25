@@ -316,7 +316,7 @@ body {
 }
 
 .form_container .hole-picker.open {
-  width: 80%;
+  width: 341px;
   max-height: 520px;
   position: absolute;
   z-index: 10;
