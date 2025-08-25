@@ -219,8 +219,8 @@ function Result() {
 
   return (
     <div ref={containerRef} className="container">
-      <h2 className="title">Score Calculator</h2>
-      <p className="subtitle">A simple way to track your game points.</p>
+      {/* <h2 className="title">Score Calculator</h2>
+      <p className="subtitle">A simple way to track your game points.</p> */}
 
       <div className="form_container">
         {/* Header */}
@@ -293,7 +293,7 @@ function Result() {
 
                 return (
                   <tr key={`player-${pIdx}`} className="player-row">
-                    {/* Tên player */}
+                    {/* Player name */}
                     <th className="player-name">{name}</th>
 
                     {/* Gross/Score*/}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import Select from "react-select";
 import "../App.css";
 
 const Score = () => {
@@ -78,15 +79,27 @@ const Score = () => {
   const [selectedField, setSelectedField] = useState("score");
   const [errorMessage, setErrorMessage] = useState("");
   const [showError, setShowError] = useState(false);
+  const [reachValue, setReachValue] = useState(() => {
+    try {
+      const setup = JSON.parse(localStorage.getItem("gameSetup") || "{}");
+      return Number(setup?.reachValue ?? 0) || 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [showHolePicker, setShowHolePicker] = useState(false);
 
+  //Load Hole
   useEffect(() => {
     localStorage.setItem("hole", JSON.stringify(hole));
   }, [hole]);
 
+  //Load Tab_Ative
   useEffect(() => {
     localStorage.setItem("activePlayerIdx", JSON.stringify(activePlayerIdx));
   }, [activePlayerIdx]);
 
+  //Load Data Defalt
   useEffect(() => {
     const savedSetup = JSON.parse(localStorage.getItem("gameSetup"));
     if (savedSetup) {
@@ -103,6 +116,7 @@ const Score = () => {
     }
   }, []);
 
+  //Clear checked on par = 3
   useEffect(() => {
     if (par !== 3) {
       setScores((prev) => {
@@ -113,6 +127,24 @@ const Score = () => {
       setScores((prev) => withCalcIfReady(prev));
     }
   }, [par]);
+
+  //Update when have new storage
+  useEffect(() => {
+    const onStorage = () => {
+      try {
+        const setup = JSON.parse(localStorage.getItem("gameSetup") || "{}");
+        const v = Number(setup?.reachValue ?? 0) || 0;
+        setReachValue(v);
+      } catch {}
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  //Update logic when had new storage
+  useEffect(() => {
+    recomputeAllHoles();
+  }, [reachValue]);
 
   //NUMPADのロジック
   const [inputBuffers, setInputBuffers] = useState(() => players.map(() => ""));
@@ -127,7 +159,14 @@ const Score = () => {
       setScores((prevScores) => {
         const next = prevScores.map((x, i) =>
           i === activePlayerIdx
-            ? { ...x, score: newBuf ? Number(newBuf) : 0 }
+            ? {
+                ...x,
+                score: newBuf
+                  ? Number(newBuf) < 20
+                    ? Number(newBuf)
+                    : Number(newBuf.slice(-1))
+                  : 0,
+              }
             : x
         );
         return withCalcIfReady(next);
@@ -161,7 +200,7 @@ const Score = () => {
     ? bonusOptions.filter((opt) => enabledBonusKeys.has(opt.key))
     : bonusOptions;
 
-  //出フィレ
+  //Result Link
   const handleExport = () => {
     navigate("/result");
   };
@@ -220,11 +259,11 @@ const Score = () => {
   };
 
   //ゴルフ点数計算のロジック
-  const recalcPreScoresForHole = (arr) => {
+  const recalcPreScoresForHole = (arr, parVal = par) => {
     const s = arr.map((v) => ({ ...v }));
     const raw = s.map((v) => Number(v.score || 0));
 
-    // Team
+    // Tìm team
     const redIdx = s
       .map((p, i) => (p.teamColor === "red" ? i : -1))
       .filter((i) => i >= 0);
@@ -232,7 +271,7 @@ const Score = () => {
       .map((p, i) => (p.teamColor === "blue" ? i : -1))
       .filter((i) => i >= 0);
 
-    // parent/child
+    // Parent/Child
     const [parentRed, childRed] =
       redIdx.length === 2
         ? raw[redIdx[0]] <= raw[redIdx[1]]
@@ -251,12 +290,9 @@ const Score = () => {
       bluePts = 0;
 
     if (parentRed != null && parentBlue != null) {
-      // Parent logic
       if (raw[parentRed] < raw[parentBlue]) {
         redPts += raw[parentBlue] - raw[parentRed];
         bluePts -= redPts;
-
-        // Child logic
         if (raw[childRed] < raw[childBlue]) {
           redPts += 1;
           bluePts -= 1;
@@ -264,8 +300,6 @@ const Score = () => {
       } else if (raw[parentRed] > raw[parentBlue]) {
         bluePts += raw[parentRed] - raw[parentBlue];
         redPts -= bluePts;
-
-        // Child logic
         if (raw[childRed] > raw[childBlue]) {
           bluePts += 1;
           redPts -= 1;
@@ -273,34 +307,97 @@ const Score = () => {
       }
     }
 
-    // NearPin bonus TEAM
-    const redHasNearPin = redIdx.some((i) => !!s[i].nearPin);
-    const blueHasNearPin = blueIdx.some((i) => !!s[i].nearPin);
-    if (redHasNearPin) {
+    // NearPin team bonus
+    if (parVal === 3 && s.some((p) => p.nearPin)) {
       if (redPts > 0) {
         redPts += 1;
         bluePts -= 1;
-      } else if (redPts < 0) {
-        redPts -= 1;
+      } else if (bluePts > 0) {
         bluePts += 1;
+        redPts -= 1;
       }
     }
 
-    if (blueHasNearPin) {
-      if (bluePts > 0) {
-        bluePts += 1;
-        redPts -= 1;
-      } else if (bluePts < 0) {
-        bluePts -= 1;
-        redPts += 1;
+    // Reach bonus team
+    const reachCount = s.filter((p) => !!p.reach).length;
+    if (reachCount > 0 && reachValue > 0) {
+      const pow = Math.pow(2, Math.min(reachCount, 4)); // 2, 4, 8, 16
+      const bonus = Math.min(reachValue, pow);
+      if (redPts > 0) {
+        redPts += bonus;
+        bluePts -= bonus;
+      } else if (bluePts > 0) {
+        bluePts += bonus;
+        redPts -= bonus;
       }
     }
 
-    // map pre_score for each player
-    return s.map((v, i) => ({
+    // Custom Box team bonus (lấy max custom của tất cả player)
+    const customValue = Math.max(...s.map((p) => Number(p.custom || 0)), 0);
+    if (customValue > 0) {
+      if (redPts > 0) {
+        redPts += customValue;
+        bluePts -= customValue;
+      } else if (bluePts > 0) {
+        bluePts += customValue;
+        redPts -= customValue;
+      }
+    }
+
+    return s.map((v) => ({
       ...v,
       pre_score: v.teamColor === "red" ? redPts : bluePts,
     }));
+  };
+
+  const recomputeAllHoles = () => {
+    const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
+    const setup = JSON.parse(localStorage.getItem("gameSetup") || "{}");
+
+    const playerCount = players.length;
+    const runningGross = Array(playerCount).fill(0);
+    const runningTeam = Array(playerCount).fill(0);
+
+    for (let h = 1; h <= 18; h++) {
+      const key = String(h);
+      const holeData = all[key] || { hole: h, par: 4, scores: [] };
+      const parVal = Number(holeData.par || 4);
+
+      // scores player
+      const baseScores = Array.from({ length: playerCount }, (_, i) => {
+        const prev = holeData.scores?.[i] || {};
+        // nearPin par != 3
+        const nearPin = parVal === 3 ? !!prev.nearPin : false;
+        return {
+          score: Number(prev.score || 0),
+          teamColor: prev.teamColor || "red",
+          reach: !!prev.reach,
+          nearPin,
+          custom: prev.custom,
+          gross_score: runningGross[i],
+          total_score: runningTeam[i],
+          pre_score: 0,
+        };
+      });
+
+      // pre_score  par & reachValue
+      const withPre = recalcPreScoresForHole(baseScores, parVal);
+
+      for (let i = 0; i < playerCount; i++) {
+        runningGross[i] += Number(withPre[i].score || 0);
+        runningTeam[i] += Number(withPre[i].pre_score || 0);
+      }
+
+      all[key] = { hole: h, par: parVal, scores: withPre };
+    }
+
+    localStorage.setItem("allHolesData", JSON.stringify(all));
+
+    const current = all[String(hole)];
+    if (current) {
+      setPar(Number(current.par || 4));
+      setScores(current.scores);
+    }
   };
 
   //Nextブータン
@@ -392,8 +489,8 @@ const Score = () => {
         players.map((_, idx) => ({
           score: 0,
           pre_score: 0,
-          gross_score: carryGross[idx] || 0, // gậy lũy kế (nếu dùng)
-          total_score: carryTotals[idx] || 0, // điểm team lũy kế
+          gross_score: carryGross[idx] || 0,
+          total_score: carryTotals[idx] || 0,
           reach: false,
           custom: 1,
           nearPin: false,
@@ -419,15 +516,60 @@ const Score = () => {
     }
   };
 
+  //Hole BUtton
+  const getParOfHole = (h) => {
+    try {
+      const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
+      const slot = all[String(h)];
+      return Number(slot?.par ?? 4);
+    } catch {
+      return 4;
+    }
+  };
+
+  const handlePickHole = (h) => {
+    setHole(h);
+    const newPar = getParOfHole(h);
+    setPar(newPar);
+
+    try {
+      const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
+      const s = all[String(h)]?.scores || null;
+      if (s) {
+        setScores(withCalcIfReady(s));
+      } else {
+        setScores((prev) =>
+          prev.map((p) => ({ ...p, score: 0, pre_score: 0, nearPin: false }))
+        );
+      }
+    } catch {}
+
+    setShowHolePicker(false);
+  };
+
   //エーラOK＿ENTER
   const handleCloseError = () => {
     setShowError(false);
   };
 
+  // Hole had data storage ?
+  const isHoleReady = (h) => {
+    try {
+      const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
+      const s = all[String(h)]?.scores;
+      if (!Array.isArray(s) || s.length < 4) return false;
+      const red = s.filter((p) => p?.teamColor === "red").length;
+      const blue = s.filter((p) => p?.teamColor === "blue").length;
+      return red === 2 && blue === 2;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div className="container">
-      <h2 className="title">Score Calculator</h2>
-      <p className="subtitle">A simple way to track your game points.</p>
+      {/* <h2 className="title">Score Calculator</h2>
+      <p className="subtitle">A simple way to track your game points.</p> */}
 
       <div className="form_container">
         {showError && (
@@ -445,11 +587,18 @@ const Score = () => {
           <button type="button" className="total_result" onClick={handleExport}>
             Result
           </button>
-          <div className="hole-content">
+
+          <button
+            type="button"
+            className="hole-content hole-toggle"
+            onClick={() => setShowHolePicker((v) => !v)}
+            aria-expanded={showHolePicker}
+          >
             <span>{frontName}</span>
             <span>H{hole}</span>
-          </div>
-          <div>
+          </button>
+
+          <div className="par-content">
             Par
             <div className="counter-box">
               <button
@@ -467,6 +616,75 @@ const Score = () => {
               >
                 +
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* PANEL PICKER */}
+        <div className={`hole-picker ${showHolePicker ? "open" : ""}`}>
+          <div className="hp-row">
+            <div className="hp-section-title">
+              {/* 前半 tên custom */}
+              {frontName}・中コース
+            </div>
+            <div className="hp-grid">
+              {Array.from({ length: 9 }, (_, i) => i + 1).map((h) => {
+                const p = getParOfHole(h);
+                const isActive = h === hole;
+                const ready = isHoleReady(h);
+
+                return (
+                  <button
+                    key={h}
+                    className={`hp-cell ${isActive ? "active" : ""} ${
+                      !ready ? "disabled" : ""
+                    }`}
+                    onClick={() => {
+                      if (!ready) return;
+                      handlePickHole(h);
+                    }}
+                    disabled={!ready}
+                    title={!ready ? "Hố này chưa đủ 2 Red + 2 Blue" : ""}
+                    aria-disabled={!ready}
+                  >
+                    <div className="hp-hole">{h}H</div>
+                    <div className="hp-par">Par {p}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="hp-row">
+            <div className="hp-section-title">
+              {/* 後半 tên custom */}
+              {state?.backname || "後半"}・西コース
+            </div>
+            <div className="hp-grid">
+              {Array.from({ length: 9 }, (_, i) => i + 10).map((h) => {
+                const p = getParOfHole(h);
+                const isActive = h === hole;
+                const ready = isHoleReady(h);
+
+                return (
+                  <button
+                    key={h}
+                    className={`hp-cell ${isActive ? "active" : ""} ${
+                      !ready ? "disabled" : ""
+                    }`}
+                    onClick={() => {
+                      if (!ready) return;
+                      handlePickHole(h);
+                    }}
+                    disabled={!ready}
+                    title={!ready ? "Hố này chưa đủ 2 Red + 2 Blue" : ""}
+                    aria-disabled={!ready}
+                  >
+                    <div className="hp-hole">{h}H</div>
+                    <div className="hp-par">Par {p}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -492,8 +710,38 @@ const Score = () => {
 
                   {/* Near Pin label */}
                   {scores[idx].nearPin && <div className="pin-label">ニピ</div>}
+                  {scores[idx].reach && (
+                    <div className="reach-label">リーチ</div>
+                  )}
 
-                  {color && (
+                  {isActive && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <label className="team-switch">
+                        <input
+                          type="checkbox"
+                          checked={scores[activePlayerIdx].teamColor === "blue"}
+                          onChange={(e) => {
+                            setScores((prev) => {
+                              const next = prev.map((p, i) =>
+                                i === activePlayerIdx
+                                  ? {
+                                      ...p,
+                                      teamColor: e.target.checked
+                                        ? "blue"
+                                        : "red",
+                                    }
+                                  : p
+                              );
+                              return withCalcIfReady(next);
+                            });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className="team-slider"></span>
+                      </label>
+                    </div>
+                  )}
+                  {color && !isActive && (
                     <span className={`team-badge team-${color}`}>
                       {color === "red" ? "Red" : "Blue"}
                     </span>
@@ -538,7 +786,7 @@ const Score = () => {
           </div>
         </div>
 
-        <div className="team-item" onClick={(e) => e.stopPropagation()}>
+        {/* <div className="team-item" onClick={(e) => e.stopPropagation()}>
           <span className="team-label-red">Red</span>
           <label className="team-switch">
             <input
@@ -559,7 +807,7 @@ const Score = () => {
             <span className="team-slider"></span>
           </label>
           <span className="team-label-blue">Blue</span>
-        </div>
+        </div> */}
 
         {visibleBonusOptions.map(({ key, label }) => {
           const isNearPin = key === "nearPin";
@@ -573,24 +821,25 @@ const Score = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 <label>{label}</label>
-                <select
+                <Select
                   className="select-item"
-                  value={scores[activePlayerIdx].customValue || 1}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
+                  value={{
+                    value: scores[activePlayerIdx].custom || 1,
+                    label: String(scores[activePlayerIdx].custom || 1),
+                  }}
+                  onChange={(option) => {
+                    const val = Number(option.value);
                     setScores((prev) => {
-                      const next = [...prev];
-                      next[activePlayerIdx].customValue = val;
-                      return next;
+                      const next = prev.map((p) => ({ ...p, custom: val }));
+                      return withCalcIfReady(next);
                     });
                   }}
-                >
-                  {Array.from({ length: 9 }, (_, i) => i + 1).map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
+                  options={Array.from({ length: 9 }, (_, i) => ({
+                    value: i + 1,
+                    label: String(i + 1),
+                  }))}
+                  menuPlacement="top"
+                />
               </div>
             );
           }

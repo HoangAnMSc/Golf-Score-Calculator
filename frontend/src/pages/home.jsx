@@ -8,6 +8,8 @@ function Home() {
   const [players, setPlayers] = useState(["", "", "", ""]);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,13 +45,28 @@ function Home() {
 
   const validate = () => {
     const errs = {};
-    if (!course.trim()) errs.course = "※ゴルフ場名を入力してください。";
-    if (!date) errs.date = "※日付を選択してください。";
+    const missingFirstThree = [0, 1, 2].filter((i) => !players[i]?.trim());
+
+    if (!course.trim()) {
+      errs.course = "※ゴルフ場名を入力してください。";
+      setErrorMessage(errs.course);
+      setShowError(true);
+    } else if (!date) {
+      errs.date = "※日付を選択してください。";
+      setErrorMessage(errs.date);
+      setShowError(true);
+    } else if (missingFirstThree.length > 0) {
+      errs.players = "※最初の3人 ( Player 1〜3 ) は必須です。";
+      errs.missingIdx = missingFirstThree;
+      setErrorMessage(errs.players);
+      setShowError(true);
+    } else {
+      setErrorMessage("");
+      setShowError(false);
+    }
 
     const enteredPlayers = players.map((p) => p.trim()).filter(Boolean);
-    if (enteredPlayers.length < 3) {
-      errs.players = "※少なくとも3人を入力してください。";
-    }
+
     return { errs, enteredPlayers };
   };
 
@@ -91,10 +108,24 @@ function Home() {
     navigate("/rule");
   };
 
+  //エーラOK＿ENTER
+  const handleCloseError = () => {
+    setShowError(false);
+  };
+
   return (
     <div className="container">
       <h2 className="title">Score Calculator</h2>
       <p className="subtitle">A simple way to track your game points.</p>
+
+      {showError && (
+        <div className="error-modal">
+          <div className="error-modal-content">
+            <p>{errorMessage}</p>
+            <button onClick={handleCloseError}>OK</button>
+          </div>
+        </div>
+      )}
 
       <form className="form_container" onSubmit={handleSubmit} noValidate>
         <h3>Game Setup</h3>
@@ -123,10 +154,12 @@ function Home() {
           <input
             key={index}
             type="text"
-            placeholder={`Player ${index + 1}`}
+            placeholder={`Player ${index + 1}${index < 3 ? " *" : ""}`}
             value={player}
             onChange={(e) => handlePlayerChange(index, e.target.value)}
-            aria-invalid={!!errors.players}
+            aria-invalid={
+              !!errors.players && index < 3 && !players[index]?.trim()
+            }
           />
         ))}
         {errors.players && <p className="error-text">{errors.players}</p>}
