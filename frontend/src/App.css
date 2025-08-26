@@ -230,6 +230,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 0;
 }
 
 .hole-wapper .hole-content {
@@ -290,6 +291,12 @@ body {
 
 .circle-btn:active {
   transform: scale(0.96);
+}
+
+button:hover,
+.circle-btn:hover {
+  background: linear-gradient(135deg, #ff793f, #ff9966);
+  color: #fff;
 }
 
 .counter-value {
@@ -376,6 +383,14 @@ body {
   filter: grayscale(50%);
 }
 
+.score-box:hover,
+.player-tab:hover,
+.hp-cell:hover {
+  box-shadow: 0 0 10px rgba(255, 121, 63, 0.6);
+  transform: translateY(-2px);
+  transition: all 0.25s ease;
+}
+
 .hp-hole {
   font-weight: 800;
   font-size: 14px;
@@ -404,28 +419,42 @@ body {
   position: relative;
   display: flex;
   min-width: 15%;
-  height: 260px;
+  height: 240px;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   border: 2px solid #1f3a5f;
   padding: 10px;
-  background: linear-gradient(145deg, #314e77, #1f3a5f);
-  color: white;
+  background-image:
+    linear-gradient(rgba(146, 146, 146, 0.4), rgba(0, 0, 0, 0.4)),
+    url('./assets/bg_golf.png');
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  color: #fff;
   cursor: pointer;
   border-radius: 5px;
-  transition: all 0.3s ease;
+  transition: transform .25s ease, box-shadow .25s ease;
 }
 
 .player-tab:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-10px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .15);
+  transition: transform .25s ease;
 }
 
 .player-tab.active {
   width: 40%;
-  background: white;
+  background-image:
+    linear-gradient(rgba(252, 252, 252, 0.48), rgba(255, 255, 255, 1)),
+    url('./assets/bg_golf2.png');
   color: #1f3a5f;
+  border-color: #1f3a5f;
+  font-weight: 600;
+}
+
+.player-tab.active .gross_score{
+  font-size: 58px;
 }
 
 .player-tab .pin-label {

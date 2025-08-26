@@ -38,6 +38,7 @@ const Score = () => {
     null;
 
   const ruleKeyMap = {
+    "Birdie Bonus": "birdie",
     "Reach Declaration": "reach",
     "Near Pin Bonus": "nearPin",
     "Custom Box": "custom",
@@ -223,6 +224,7 @@ const Score = () => {
         "nearPin",
         "reach",
         "custom",
+        "customValue",
         "gross_score",
         "total_score",
       ].forEach((k) => {
@@ -290,7 +292,42 @@ const Score = () => {
       bluePts = 0;
 
     if (parentRed != null && parentBlue != null) {
-      if (raw[parentRed] < raw[parentBlue]) {
+      //Birdie Logic
+      if (enabledBonusKeys?.has("birdie")) {
+        let birdieCount = 0;
+
+        if (raw[parentRed] < raw[childBlue]) {
+          // Red win
+          redPts += raw[childBlue] - raw[parentRed];
+          bluePts = -redPts;
+
+          if (raw[parentRed] < parVal) birdieCount++;
+
+          if (raw[childRed] < raw[parentBlue]) {
+            redPts += 1;
+            bluePts -= 1;
+            if (raw[childRed] < parVal) birdieCount++;
+          }
+        } else if (raw[parentRed] > raw[childBlue]) {
+          // Blue win
+          bluePts += raw[parentRed] - raw[childBlue];
+          redPts = -bluePts;
+
+          if (raw[childBlue] < parVal) birdieCount++;
+
+          if (raw[childRed] > raw[parentBlue]) {
+            bluePts += 1;
+            redPts -= 1;
+            if (raw[parentBlue] < parVal) birdieCount++;
+          }
+        }
+
+        const factor = birdieCount > 0 ? birdieCount : 1;
+        redPts = (redPts + factor) * factor;
+        bluePts = (bluePts - factor) * factor;
+      } else if (raw[parentRed] < raw[parentBlue]) {
+        //Normal Logic
+
         redPts += raw[parentBlue] - raw[parentRed];
         bluePts -= redPts;
         if (raw[childRed] < raw[childBlue]) {
@@ -333,8 +370,11 @@ const Score = () => {
     }
 
     // Custom Box team bonus (lấy max custom của tất cả player)
-    const customValue = Math.max(...s.map((p) => Number(p.custom || 0)), 0);
-    if (customValue > 0) {
+    const customValue = Math.max(
+      ...s.map((p) => Number(p.customValue || 0)),
+      0
+    );
+    if (customValue > 0 && s.some((p) => p.custom)) {
       if (redPts > 0) {
         redPts += customValue;
         bluePts -= customValue;
@@ -373,7 +413,8 @@ const Score = () => {
           teamColor: prev.teamColor || "red",
           reach: !!prev.reach,
           nearPin,
-          custom: prev.custom,
+          custom: !!prev.custom,
+          customValue: prev.customValue || 1,
           gross_score: runningGross[i],
           total_score: runningTeam[i],
           pre_score: 0,
@@ -492,7 +533,8 @@ const Score = () => {
           gross_score: carryGross[idx] || 0,
           total_score: carryTotals[idx] || 0,
           reach: false,
-          custom: 1,
+          custom: false,
+          customValue: 0,
           nearPin: false,
           teamColor: "red",
         }))
@@ -813,33 +855,88 @@ const Score = () => {
           const isNearPin = key === "nearPin";
           const isDisabled = isNearPin && par !== 3;
 
+          // if (key === "custom") {
+          //   return (
+          //     <div
+          //       key={key}
+          //       className="select-row"
+          //       onClick={(e) => e.stopPropagation()}
+          //     >
+          //       <label>{label}</label>
+          //       <Select
+          //         className="select-item"
+          //         value={{
+          //           value: scores[activePlayerIdx].custom || 1,
+          //           label: String(scores[activePlayerIdx].custom || 1),
+          //         }}
+          //         onChange={(option) => {
+          //           const val = Number(option.value);
+          //           setScores((prev) => {
+          //             const next = prev.map((p) => ({ ...p, custom: val }));
+          //             return withCalcIfReady(next);
+          //           });
+          //         }}
+          //         options={Array.from({ length: 9 }, (_, i) => ({
+          //           value: i + 1,
+          //           label: String(i + 1),
+          //         }))}
+          //         menuPlacement="top"
+          //       />
+          //     </div>
+          //   );
+          // }
           if (key === "custom") {
+            const customEnabled = !!scores[activePlayerIdx].custom;
+
             return (
               <div
                 key={key}
-                className="select-row"
+                className="checkbox-row"
                 onClick={(e) => e.stopPropagation()}
               >
-                <label>{label}</label>
-                <Select
-                  className="select-item"
-                  value={{
-                    value: scores[activePlayerIdx].custom || 1,
-                    label: String(scores[activePlayerIdx].custom || 1),
-                  }}
-                  onChange={(option) => {
-                    const val = Number(option.value);
-                    setScores((prev) => {
-                      const next = prev.map((p) => ({ ...p, custom: val }));
-                      return withCalcIfReady(next);
-                    });
-                  }}
-                  options={Array.from({ length: 9 }, (_, i) => ({
-                    value: i + 1,
-                    label: String(i + 1),
-                  }))}
-                  menuPlacement="top"
-                />
+                <label className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={customEnabled}
+                    onChange={(e) => {
+                      setScores((prev) => {
+                        const next = prev.map((p) => ({
+                          ...p,
+                          custom: e.target.checked,
+                          customValue: e.target.checked ? 1 : 0, //default customvalue
+                        }));
+                        return withCalcIfReady(next);
+                      });
+                    }}
+                    disabled={isDisabled}
+                  />
+                  {label}
+                </label>
+
+                {customEnabled && (
+                  <Select
+                    className="select-item"
+                    value={{
+                      value: Number(scores[activePlayerIdx].customValue || 1),
+                      label: String(scores[activePlayerIdx].customValue || 1),
+                    }}
+                    onChange={(option) => {
+                      const val = Number(option.value);
+                      setScores((prev) => {
+                        const next = prev.map((p) => ({
+                          ...p,
+                          customValue: val,
+                        }));
+                        return withCalcIfReady(next);
+                      });
+                    }}
+                    options={Array.from({ length: 9 }, (_, i) => ({
+                      value: i + 1,
+                      label: String(i + 1),
+                    }))}
+                    menuPlacement="top"
+                  />
+                )}
               </div>
             );
           }
