@@ -80,6 +80,7 @@ const Score = () => {
   const [selectedField, setSelectedField] = useState("score");
   const [errorMessage, setErrorMessage] = useState("");
   const [showError, setShowError] = useState(false);
+  // const [customBonus, setCustomBonus] = useState(0);
   const [reachValue, setReachValue] = useState(() => {
     try {
       const setup = JSON.parse(localStorage.getItem("gameSetup") || "{}");
@@ -100,7 +101,7 @@ const Score = () => {
     localStorage.setItem("activePlayerIdx", JSON.stringify(activePlayerIdx));
   }, [activePlayerIdx]);
 
-  //Load Data Defalt
+  //Load Data
   useEffect(() => {
     const savedSetup = JSON.parse(localStorage.getItem("gameSetup"));
     if (savedSetup) {
@@ -206,10 +207,33 @@ const Score = () => {
     navigate("/result");
   };
 
+  //Get CustomBonus
+  const getHoleCustomBonus = (h) => {
+    const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
+    return Number(all[String(h)]?.customBonus || 0);
+  };
+
+  //Set CustomBonus
+  const setHoleCustomBonus = (h, value) => {
+    const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
+    const prevHoleData = all[String(h)] || { hole: h, par: 4, scores: [] };
+
+    all[String(h)] = {
+      ...prevHoleData,
+      customBonus: Number(value),
+    };
+
+    localStorage.setItem("allHolesData", JSON.stringify(all));
+  };
+
   //Merge変更データ
   const saveHoleDataDiff = (h, parVal, scoresArr) => {
     const allHolesData = JSON.parse(localStorage.getItem("allHolesData")) || {};
-    const existing = allHolesData[h] || { hole: h, par: parVal, scores: [] };
+    const existing = allHolesData[h] || {
+      hole: h,
+      par: parVal,
+      scores: [],
+    };
 
     // re-calc pre_score
     const recomputed = withCalcIfReady(scoresArr);
@@ -265,7 +289,7 @@ const Score = () => {
     const s = arr.map((v) => ({ ...v }));
     const raw = s.map((v) => Number(v.score || 0));
 
-    // Tìm team
+    // Handle Team
     const redIdx = s
       .map((p, i) => (p.teamColor === "red" ? i : -1))
       .filter((i) => i >= 0);
@@ -321,67 +345,86 @@ const Score = () => {
             if (raw[parentBlue] < parVal) birdieCount++;
           }
         }
-
         const factor = birdieCount > 0 ? birdieCount : 1;
         redPts = (redPts + factor) * factor;
         bluePts = (bluePts - factor) * factor;
-      } else if (raw[parentRed] < raw[parentBlue]) {
+      } else {
         //Normal Logic
+        if (raw[parentRed] < raw[parentBlue]) {
+          //parentRed Win
+          redPts += raw[parentBlue] - raw[parentRed];
+          bluePts -= redPts;
+          if (raw[childRed] < raw[childBlue]) {
+            redPts += 1;
+            bluePts -= 1;
+          }
+        } else if (raw[parentRed] > raw[parentBlue]) {
+          //parentBlue Win
+          bluePts += raw[parentRed] - raw[parentBlue];
+          redPts -= bluePts;
+          if (raw[childRed] > raw[childBlue]) {
+            bluePts += 1;
+            redPts -= 1;
+          }
+        } else {
+          //parent Draw
+          if (raw[childRed] < raw[childBlue]) {
+            redPts += 1;
+            bluePts -= 1;
+          } else if (raw[childRed] > raw[childBlue]) {
+            bluePts += 1;
+            redPts -= 1;
+          }
+        }
+      }
 
-        redPts += raw[parentBlue] - raw[parentRed];
-        bluePts -= redPts;
-        if (raw[childRed] < raw[childBlue]) {
+      // NearPin team bonus
+      if (parVal === 3 && s.some((p) => p.nearPin)) {
+        if (redPts > 0) {
           redPts += 1;
           bluePts -= 1;
-        }
-      } else if (raw[parentRed] > raw[parentBlue]) {
-        bluePts += raw[parentRed] - raw[parentBlue];
-        redPts -= bluePts;
-        if (raw[childRed] > raw[childBlue]) {
+        } else if (bluePts > 0) {
           bluePts += 1;
           redPts -= 1;
         }
       }
-    }
 
-    // NearPin team bonus
-    if (parVal === 3 && s.some((p) => p.nearPin)) {
-      if (redPts > 0) {
-        redPts += 1;
-        bluePts -= 1;
-      } else if (bluePts > 0) {
-        bluePts += 1;
-        redPts -= 1;
+      // Reach bonus team
+      const reachCount = s.filter((p) => !!p.reach).length;
+      if (reachCount > 0 && reachValue > 0) {
+        const pow = Math.pow(2, Math.min(reachCount, 4)); // 2, 4, 8, 16
+        const bonus = Math.min(reachValue, pow);
+        if (redPts > 0) {
+          redPts += bonus;
+          bluePts -= bonus;
+        } else if (bluePts > 0) {
+          bluePts += bonus;
+          redPts -= bonus;
+        }
       }
-    }
 
-    // Reach bonus team
-    const reachCount = s.filter((p) => !!p.reach).length;
-    if (reachCount > 0 && reachValue > 0) {
-      const pow = Math.pow(2, Math.min(reachCount, 4)); // 2, 4, 8, 16
-      const bonus = Math.min(reachValue, pow);
-      if (redPts > 0) {
-        redPts += bonus;
-        bluePts -= bonus;
-      } else if (bluePts > 0) {
-        bluePts += bonus;
-        redPts -= bonus;
-      }
-    }
+      // Custom Box team bonus
+      const customValue = Math.max(
+        ...s.map((p) => Number(p.customValue || 0)),
+        0
+      );
+      const prevBonus = getHoleCustomBonus(hole - 1);
+      console.log("AAAAAA", prevBonus);
 
-    // Custom Box team bonus (lấy max custom của tất cả player)
-    const customValue = Math.max(
-      ...s.map((p) => Number(p.customValue || 0)),
-      0
-    );
-    if (customValue > 0 && s.some((p) => p.custom)) {
-      if (redPts > 0) {
-        redPts += customValue;
-        bluePts -= customValue;
-      } else if (bluePts > 0) {
-        bluePts += customValue;
-        redPts -= customValue;
+      if (s.some((p) => p.custom)) {
+        if (redPts === 0 && bluePts === 0) {
+          setHoleCustomBonus(hole, prevBonus + 1);
+        } else if (redPts > 0) {
+          redPts += customValue + prevBonus;
+          bluePts -= customValue + prevBonus;
+          setHoleCustomBonus(hole, 0);
+        } else if (bluePts > 0) {
+          bluePts += customValue + prevBonus;
+          redPts -= customValue + prevBonus;
+          setHoleCustomBonus(hole, 0);
+        }
       }
+      console.log("BBBB", prevBonus);
     }
 
     return s.map((v) => ({
