@@ -1,9 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Poppins:wght@400;600;700&display=swap');
+
+:root {
+  --primary: #204a86;
+  --accent: #ff793f;
+  --bg-light: #f4f7fb;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --text-dark: #1f2937;
+  --text-light: #6b7280;
+  --radius: 14px;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* ====== Body ====== */
 body {
-  font-family: Arial, sans-serif;
-  color: black;
-  background-color: #f8f9fa;
-  margin: 0 auto;
-  justify-content: center;
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(135deg, #e9f1f9, #fdfdfd);
+  margin: 0;
+  color: var(--text-dark);
 }
 
 .container {
@@ -13,10 +26,13 @@ body {
 }
 
 .container .title {
-  font-size: 36px;
-  margin: 0 20px;
-  font-weight: bold;
+  font-size: 26px;
+  font-weight: 700;
   text-align: center;
+  margin-bottom: 18px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .container .subtitle {
@@ -223,28 +239,26 @@ body {
   width: 40%;
 }
 
-.form_container .course_title{
-  width: 100%;
-  font-size: 24px;
-  border-radius: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0;
-}
-
 .hole-wapper .hole-content {
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  border: 4px solid var(--primary);
+  background: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--primary);
   display: flex;
   flex-direction: column;
-  width: 80px;
-  height: 80px;
-  background-color: white;
-  font-weight: 700;
-  color: #1f3a5f;
   justify-content: center;
-  align-items: center;
-  border: 5px solid #1f3a5f;
-  border-radius: 50%;
+  transition: 0.25s;
+}
+
+.hole-content:hover {
+  transform: scale(1.05);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 15px rgba(255, 121, 63, 0.45);
 }
 
 .score-control {
@@ -416,41 +430,26 @@ button:hover,
 }
 
 .player-tab {
-  position: relative;
-  display: flex;
-  min-width: 15%;
-  height: 240px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  border: 2px solid #1f3a5f;
-  padding: 10px;
-  background-image:
-    linear-gradient(rgba(146, 146, 146, 0.4), rgba(0, 0, 0, 0.4)),
-    url('./assets/bg_golf.png');
-  background-size: cover, cover;
-  background-position: center, center;
-  background-repeat: no-repeat, no-repeat;
-  color: #fff;
+  flex: 1;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, #f8fafc, #eef2f7);
+  border: 2px solid transparent;
   cursor: pointer;
-  border-radius: 5px;
-  transition: transform .25s ease, box-shadow .25s ease;
+  transition: all 0.3s;
+  text-align: center;
 }
 
 .player-tab:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, .15);
-  transition: transform .25s ease;
+  border-color: var(--accent);
+  transform: translateY(-6px);
+  box-shadow: var(--shadow);
 }
 
 .player-tab.active {
-  width: 40%;
-  background-image:
-    linear-gradient(rgba(252, 252, 252, 0.48), rgba(255, 255, 255, 1)),
-    url('./assets/bg_golf2.png');
-  color: #1f3a5f;
-  border-color: #1f3a5f;
-  font-weight: 600;
+  background: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 15px rgba(32, 74, 134, 0.35);
 }
 
 .player-tab.active .gross_score{
