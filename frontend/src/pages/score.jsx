@@ -666,7 +666,7 @@ const Score = () => {
           </div>
         )}
 
-        <h3 className="course_title">{courseName}'s Course</h3>
+        <h3 className="title">{courseName}'s Course</h3>
 
         <div className="hole-wapper">
           <button type="button" className="total_result" onClick={handleExport}>
@@ -800,8 +800,11 @@ const Score = () => {
                   )}
 
                   {isActive && (
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <label className="team-switch">
+                    <div
+                      className="team-switch"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <label>
                         <input
                           type="checkbox"
                           checked={scores[activePlayerIdx].teamColor === "blue"}
@@ -871,63 +874,10 @@ const Score = () => {
           </div>
         </div>
 
-        {/* <div className="team-item" onClick={(e) => e.stopPropagation()}>
-          <span className="team-label-red">Red</span>
-          <label className="team-switch">
-            <input
-              type="checkbox"
-              checked={scores[activePlayerIdx].teamColor === "blue"}
-              onChange={(e) => {
-                setScores((prev) => {
-                  const next = prev.map((p, i) =>
-                    i === activePlayerIdx
-                      ? { ...p, teamColor: e.target.checked ? "blue" : "red" }
-                      : p
-                  );
-                  return withCalcIfReady(next);
-                });
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-            <span className="team-slider"></span>
-          </label>
-          <span className="team-label-blue">Blue</span>
-        </div> */}
-
         {visibleBonusOptions.map(({ key, label }) => {
           const isNearPin = key === "nearPin";
           const isDisabled = isNearPin && par !== 3;
 
-          // if (key === "custom") {
-          //   return (
-          //     <div
-          //       key={key}
-          //       className="select-row"
-          //       onClick={(e) => e.stopPropagation()}
-          //     >
-          //       <label>{label}</label>
-          //       <Select
-          //         className="select-item"
-          //         value={{
-          //           value: scores[activePlayerIdx].custom || 1,
-          //           label: String(scores[activePlayerIdx].custom || 1),
-          //         }}
-          //         onChange={(option) => {
-          //           const val = Number(option.value);
-          //           setScores((prev) => {
-          //             const next = prev.map((p) => ({ ...p, custom: val }));
-          //             return withCalcIfReady(next);
-          //           });
-          //         }}
-          //         options={Array.from({ length: 9 }, (_, i) => ({
-          //           value: i + 1,
-          //           label: String(i + 1),
-          //         }))}
-          //         menuPlacement="top"
-          //       />
-          //     </div>
-          //   );
-          // }
           if (key === "custom") {
             const customEnabled = !!scores[activePlayerIdx].custom;
 
