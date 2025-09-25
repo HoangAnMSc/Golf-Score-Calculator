@@ -48,6 +48,7 @@ body {
 
 .form_container {
   background: white;
+  width: 90%;
   padding: 20px;
   gap: 10px;
   border-radius: 12px;
@@ -330,7 +331,6 @@ button:hover,
 
 .form_container .hole-picker {
   z-index: 10;
-  width: 41%;
   opacity: 0;
   height: 0;
   background: var(--text-dark);
@@ -341,7 +341,8 @@ button:hover,
 }
 
 .form_container .hole-picker.open {
-  width: 41%;
+  width: 360px;
+  top: 242px;
   height: 360px;
   position: absolute;
   opacity: 1;
