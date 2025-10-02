@@ -326,28 +326,35 @@ button:hover,
 }
 
 .hole-toggle {
-  cursor: pointer;
+  cursor: pointer !important;
+  pointer-events: auto !important;
 }
 
 .form_container .hole-picker {
-  z-index: 10;
+  z-index: 999;
   opacity: 0;
   height: 0;
   background: var(--text-dark);
   border-radius: 10px;
   padding: 0 12px;
   color: #e5e7eb;
-  transition: height 0..5s ease-in;
 }
 
 .form_container .hole-picker.open {
   width: 360px;
-  top: 242px;
-  height: 360px;
+  height: 380px;
   position: absolute;
   opacity: 1;
   transform: translateY(0);
   transition: height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
+}
+
+.form_container:has(> .hole-picker.open) {
+  cursor: not-allowed;
+}
+
+.form_container:has(> .hole-picker.open)>*:not(.hole-picker):not(.hole-toggle) {
+  pointer-events: none;
 }
 
 .hp-row+.hp-row {

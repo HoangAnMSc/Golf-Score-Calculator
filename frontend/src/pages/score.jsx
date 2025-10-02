@@ -80,7 +80,15 @@ const Score = () => {
   const [selectedField, setSelectedField] = useState("score");
   const [errorMessage, setErrorMessage] = useState("");
   const [showError, setShowError] = useState(false);
-  // const [customBonus, setCustomBonus] = useState(0);
+  const [drawBonus, setDrawBonus] = useState(() => {
+    const savedDrawBonus = localStorage.getItem("drawBonus");
+    return savedDrawBonus ? JSON.parse(savedDrawBonus) : 0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("drawBonus", JSON.stringify(drawBonus));
+  }, [drawBonus]);
+
   const [reachValue, setReachValue] = useState(() => {
     try {
       const setup = JSON.parse(localStorage.getItem("gameSetup") || "{}");
@@ -205,25 +213,6 @@ const Score = () => {
   //Result Link
   const handleExport = () => {
     navigate("/result");
-  };
-
-  //Get CustomBonus
-  const getHoleCustomBonus = (h) => {
-    const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
-    return Number(all[String(h)]?.customBonus || 0);
-  };
-
-  //Set CustomBonus
-  const setHoleCustomBonus = (h, value) => {
-    const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
-    const prevHoleData = all[String(h)] || { hole: h, par: 4, scores: [] };
-
-    all[String(h)] = {
-      ...prevHoleData,
-      customBonus: Number(value),
-    };
-
-    localStorage.setItem("allHolesData", JSON.stringify(all));
   };
 
   //Merge変更データ
@@ -408,23 +397,16 @@ const Score = () => {
         ...s.map((p) => Number(p.customValue || 0)),
         0
       );
-      const prevBonus = getHoleCustomBonus(hole - 1);
-      console.log("AAAAAA", prevBonus);
 
       if (s.some((p) => p.custom)) {
-        if (redPts === 0 && bluePts === 0) {
-          setHoleCustomBonus(hole, prevBonus + 1);
-        } else if (redPts > 0) {
-          redPts += customValue + prevBonus;
-          bluePts -= customValue + prevBonus;
-          setHoleCustomBonus(hole, 0);
+        if (redPts > 0) {
+          redPts += customValue;
+          bluePts -= customValue;
         } else if (bluePts > 0) {
-          bluePts += customValue + prevBonus;
-          redPts -= customValue + prevBonus;
-          setHoleCustomBonus(hole, 0);
+          bluePts += customValue;
+          redPts -= customValue;
         }
       }
-      console.log("BBBB", prevBonus);
     }
 
     return s.map((v) => ({
@@ -510,6 +492,22 @@ const Score = () => {
 
     // Save hole rightnow
     saveHoleDataDiff(hole, par, scores);
+    // Kiểm tra Draw
+    const redTotal = scores
+      .filter((s) => s.teamColor === "red")
+      .reduce((sum, s) => sum + s.pre_score, 0);
+
+    const blueTotal = scores
+      .filter((s) => s.teamColor === "blue")
+      .reduce((sum, s) => sum + s.pre_score, 0);
+
+    const isDraw = redTotal === blueTotal;
+
+    if (isDraw) {
+      setDrawBonus((prev) => prev + 1);
+    } else {
+      setDrawBonus(0);
+    }
 
     // Hole 18 => Result
     if (hole === 18) {
@@ -561,7 +559,6 @@ const Score = () => {
     if (!allHolesData[nextHole]?.scores) {
       const prevScores = currentHoleData?.scores || [];
 
-      // cộng dồn từ hole hiện tại để mang sang hole kế
       const carryTotals = prevScores.map(
         (s) => Number(s.total_score || 0) + Number(s.pre_score || 0)
       );
@@ -591,6 +588,9 @@ const Score = () => {
   //Preブータン
   const handlePreHole = () => {
     const prevHole = hole > 1 ? hole - 1 : 1;
+    if (drawBonus > 0) {
+      setDrawBonus((prev) => prev - 1);
+    }
     setHole(prevHole);
 
     const allHolesData = JSON.parse(localStorage.getItem("allHolesData")) || {};
@@ -786,7 +786,9 @@ const Score = () => {
                   onClick={() => setActivePlayerIdx(idx)}
                 >
                   <div className="player-name">{name}</div>
-                  <div className="gross_score">{scores[idx].gross_score}</div>
+                  <div className="gross_score">
+                    {scores[idx].gross_score + scores[idx].score}
+                  </div>
                   <div className="pre_score">
                     {scores[idx].total_score}(
                     {scores[idx].pre_score >= 0 ? "+" : ""}
@@ -879,7 +881,8 @@ const Score = () => {
           const isDisabled = isNearPin && par !== 3;
 
           if (key === "custom") {
-            const customEnabled = !!scores[activePlayerIdx].custom;
+            const customEnabled =
+              !!scores[activePlayerIdx].custom || drawBonus > 0;
 
             return (
               <div
@@ -910,16 +913,19 @@ const Score = () => {
                   <Select
                     className="select-item"
                     value={{
-                      value: Number(scores[activePlayerIdx].customValue || 1),
-                      label: String(scores[activePlayerIdx].customValue || 1),
+                      value: Number(
+                        scores[activePlayerIdx].customValue || drawBonus || 1
+                      ),
+                      label: String(
+                        scores[activePlayerIdx].customValue || drawBonus || 1
+                      ),
                     }}
                     onChange={(option) => {
                       const val = Number(option.value);
                       setScores((prev) => {
-                        const next = prev.map((p) => ({
-                          ...p,
-                          customValue: val,
-                        }));
+                        const next = prev.map((p, i) =>
+                          i === activePlayerIdx ? { ...p, customValue: val } : p
+                        );
                         return withCalcIfReady(next);
                       });
                     }}
