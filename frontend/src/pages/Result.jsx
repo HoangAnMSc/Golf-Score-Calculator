@@ -309,8 +309,14 @@ function Result() {
                         i,
                         pIdx
                       );
+                      const isNeg =
+                        typeof pre_score === "number" && pre_score < 0;
+
                       return (
-                        <td key={`p${pIdx}-out-${i}`} className="score-cell">
+                        <td
+                          key={`p${pIdx}-out-${i}`}
+                          className={`score-cell ${isNeg ? "neg-cell" : ""}`}
+                        >
                           <div className="cell-inner">
                             <span className="score-val">{score}</span>
                           </div>
@@ -338,13 +344,18 @@ function Result() {
                         holeIdx,
                         pIdx
                       );
+                      const isNeg =
+                        typeof pre_score === "number" && pre_score < 0;
+
                       return (
                         <td key={`p${pIdx}-in-${i}`} className="score-cell">
                           <div className="cell-inner">
                             <span className="score-val">{score}</span>
                           </div>
                           <hr />
-                          <div className="cell-inner">
+                          <div
+                            className={`cell-inner ${isNeg ? "neg-cell" : ""}`}
+                          >
                             {reach && <span className="mark-reach">△</span>}
                             {nearPin && <span className="mark-nearpin">●</span>}
                             <span className="score-val">{pre_score}</span>

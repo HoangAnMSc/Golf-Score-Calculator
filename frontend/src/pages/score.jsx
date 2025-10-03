@@ -89,6 +89,19 @@ const Score = () => {
     localStorage.setItem("drawBonus", JSON.stringify(drawBonus));
   }, [drawBonus]);
 
+  useEffect(() => {
+    if (drawBonus > 0) {
+      setScores((prev) => {
+        const next = prev.map((p) => ({
+          ...p,
+          custom: true,
+          customValue: drawBonus,
+        }));
+        return withCalcIfReady(next);
+      });
+    }
+  }, [drawBonus]);
+
   const [reachValue, setReachValue] = useState(() => {
     try {
       const setup = JSON.parse(localStorage.getItem("gameSetup") || "{}");
@@ -383,12 +396,20 @@ const Score = () => {
       if (reachCount > 0 && reachValue > 0) {
         const pow = Math.pow(2, Math.min(reachCount, 4)); // 2, 4, 8, 16
         const bonus = Math.min(reachValue, pow);
+        // if (redPts > 0) {
+        //   redPts += bonus;
+        //   bluePts -= bonus;
+        // } else if (bluePts > 0) {
+        //   bluePts += bonus;
+        //   redPts -= bonus;
+        // }
+
         if (redPts > 0) {
-          redPts += bonus;
-          bluePts -= bonus;
+          redPts = redPts * bonus;
+          bluePts = bluePts * bonus;
         } else if (bluePts > 0) {
-          bluePts += bonus;
-          redPts -= bonus;
+          bluePts = bluePts * bonus;
+          redPts = redPts * bonus;
         }
       }
 
@@ -573,8 +594,8 @@ const Score = () => {
           gross_score: carryGross[idx] || 0,
           total_score: carryTotals[idx] || 0,
           reach: false,
-          custom: false,
-          customValue: 0,
+          custom: drawBonus > 0,
+          customValue: drawBonus > 0 ? drawBonus : 0,
           nearPin: false,
           teamColor: "red",
         }))
@@ -895,11 +916,17 @@ const Score = () => {
                     type="checkbox"
                     checked={customEnabled}
                     onChange={(e) => {
+                      //Unnable Onchange
+                      if (drawBonus > 0) return;
                       setScores((prev) => {
                         const next = prev.map((p) => ({
                           ...p,
                           custom: e.target.checked,
-                          customValue: e.target.checked ? 1 : 0, //default customvalue
+                          customValue: e.target.checked
+                            ? drawBonus > 0
+                              ? drawBonus
+                              : 1
+                            : 0,
                         }));
                         return withCalcIfReady(next);
                       });
@@ -913,18 +940,16 @@ const Score = () => {
                   <Select
                     className="select-item"
                     value={{
-                      value: Number(
-                        scores[activePlayerIdx].customValue || drawBonus || 1
-                      ),
-                      label: String(
-                        scores[activePlayerIdx].customValue || drawBonus || 1
-                      ),
+                      value: Number(scores[activePlayerIdx].customValue || 1),
+                      label: String(scores[activePlayerIdx].customValue || 1),
                     }}
                     onChange={(option) => {
                       const val = Number(option.value);
                       setScores((prev) => {
                         const next = prev.map((p, i) =>
-                          i === activePlayerIdx ? { ...p, customValue: val } : p
+                          i === activePlayerIdx
+                            ? { ...p, customValue: val, custom: true }
+                            : p
                         );
                         return withCalcIfReady(next);
                       });

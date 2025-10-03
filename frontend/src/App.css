@@ -1031,5 +1031,13 @@ body.landscape-lock {
   overflow: hidden;
 }
 
+.neg-cell {
+  background: #ff1744 !important;
+  color: #fff;
+}
 
-
+.neg-cell .mark-reach,
+.neg-cell .mark-nearpin,
+.neg-cell .score-val {
+  color: #fff;
+}
