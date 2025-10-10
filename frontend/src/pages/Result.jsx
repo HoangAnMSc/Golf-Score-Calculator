@@ -348,7 +348,10 @@ function Result() {
                         typeof pre_score === "number" && pre_score < 0;
 
                       return (
-                        <td key={`p${pIdx}-in-${i}`} className="score-cell">
+                        <td
+                          key={`p${pIdx}-out-${i}`}
+                          className={`score-cell ${isNeg ? "neg-cell" : ""}`}
+                        >
                           <div className="cell-inner">
                             <span className="score-val">{score}</span>
                           </div>

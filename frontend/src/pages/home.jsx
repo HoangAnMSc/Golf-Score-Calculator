@@ -103,7 +103,6 @@ function Home() {
     };
 
     localStorage.setItem("gameSetup", JSON.stringify(payload));
-    console.log("Game Setup:", payload);
 
     navigate("/rule");
   };

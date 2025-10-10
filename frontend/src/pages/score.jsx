@@ -29,8 +29,12 @@ const Score = () => {
     JSON.parse(localStorage.getItem("gameSetup"))?.course ||
     "My Course";
 
+  // const frontName =
+  //   hole >= 10 ? state?.backname || "後半" : state?.frontname || "前半";
   const frontName =
-    hole >= 10 ? state?.backname || "後半" : state?.frontname || "前半";
+    hole >= 10
+      ? JSON.parse(localStorage.getItem("gameSetup"))?.backname || "後半"
+      : JSON.parse(localStorage.getItem("gameSetup"))?.frontname || "前半";
 
   const rulesFromRule =
     state?.rules ||
@@ -38,6 +42,7 @@ const Score = () => {
     null;
 
   const ruleKeyMap = {
+    Handicap: "handicap",
     "Birdie Bonus": "birdie",
     "Reach Declaration": "reach",
     "Near Pin Bonus": "nearPin",
@@ -249,6 +254,7 @@ const Score = () => {
         "teamColor",
         "nearPin",
         "reach",
+        "handicap",
         "custom",
         "customValue",
         "gross_score",
@@ -289,7 +295,12 @@ const Score = () => {
   //ゴルフ点数計算のロジック
   const recalcPreScoresForHole = (arr, parVal = par) => {
     const s = arr.map((v) => ({ ...v }));
-    const raw = s.map((v) => Number(v.score || 0));
+    // const raw = s.map((v) => Number(v.score || 0));
+    const raw = s.map((v) =>
+      enabledBonusKeys?.has("handicap")
+        ? Number(v.score || 0) - Number(v.handicap || 0)
+        : Number(v.score || 0)
+    );
 
     // Handle Team
     const redIdx = s
@@ -346,7 +357,19 @@ const Score = () => {
             redPts -= 1;
             if (raw[parentBlue] < parVal) birdieCount++;
           }
+        } else {
+          //parent Draw
+          if (raw[childRed] < raw[childBlue]) {
+            redPts += 1;
+            bluePts -= 1;
+          } else if (raw[childRed] > raw[childBlue]) {
+            bluePts += 1;
+            redPts -= 1;
+          } else {
+            bluePts = redPts = 0;
+          }
         }
+
         const factor = birdieCount > 0 ? birdieCount : 1;
         redPts = (redPts + factor) * factor;
         bluePts = (bluePts - factor) * factor;
@@ -459,6 +482,7 @@ const Score = () => {
           teamColor: prev.teamColor || "red",
           reach: !!prev.reach,
           nearPin,
+          handicap: Number(prev.handicap || 0),
           custom: !!prev.custom,
           customValue: prev.customValue || 1,
           gross_score: runningGross[i],
@@ -594,6 +618,7 @@ const Score = () => {
           gross_score: carryGross[idx] || 0,
           total_score: carryTotals[idx] || 0,
           reach: false,
+          handicap: 0,
           custom: drawBonus > 0,
           customValue: drawBonus > 0 ? drawBonus : 0,
           nearPin: false,
@@ -700,7 +725,7 @@ const Score = () => {
             onClick={() => setShowHolePicker((v) => !v)}
             aria-expanded={showHolePicker}
           >
-            <span>{frontName}</span>
+            <span className="frontName">{frontName}</span>
             <span>H{hole}</span>
           </button>
 
@@ -731,7 +756,9 @@ const Score = () => {
           <div className="hp-row">
             <div className="hp-section-title">
               {/* 前半 tên custom */}
-              {frontName}・中コース
+              {JSON.parse(localStorage.getItem("gameSetup") || "{}")
+                ?.frontname || "前半"}
+              ・中コース
             </div>
             <div className="hp-grid">
               {Array.from({ length: 9 }, (_, i) => i + 1).map((h) => {
@@ -764,7 +791,9 @@ const Score = () => {
           <div className="hp-row">
             <div className="hp-section-title">
               {/* 後半 tên custom */}
-              {state?.backname || "後半"}・西コース
+              {JSON.parse(localStorage.getItem("gameSetup") || "{}")
+                ?.backname || "後半"}
+              ・西コース
             </div>
             <div className="hp-grid">
               {Array.from({ length: 9 }, (_, i) => i + 10).map((h) => {
@@ -810,6 +839,12 @@ const Score = () => {
                   <div className="gross_score">
                     {scores[idx].gross_score + scores[idx].score}
                   </div>
+                  {enabledBonusKeys?.has("handicap") &&
+                    scores[idx].handicap > 0 && (
+                      <div className="hadicap_score">
+                        -{scores[idx].handicap}
+                      </div>
+                    )}
                   <div className="pre_score">
                     {scores[idx].total_score}(
                     {scores[idx].pre_score >= 0 ? "+" : ""}
@@ -874,6 +909,61 @@ const Score = () => {
                       {scores[idx].score || "0"}
                     </div>
                   </div>
+                  {/* Handicap  */}
+                  {enabledBonusKeys?.has("handicap") && (
+                    <div className="handicap-row">
+                      <span className="handicap-label">Handicap</span>
+                      <div className="counter-box">
+                        {isActive && (
+                          <button
+                            type="button"
+                            className="circle-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setScores((prev) => {
+                                const next = [...prev];
+                                const current = next[idx];
+                                const newVal = Math.max(
+                                  0,
+                                  (current.handicap || 0) - 1
+                                );
+                                next[idx] = { ...current, handicap: newVal };
+                                return withCalcIfReady(next);
+                              });
+                            }}
+                            disabled={(scores[idx]?.handicap || 0) <= 0}
+                          >
+                            -
+                          </button>
+                        )}
+                        <div className="counter-value">
+                          {scores[idx]?.handicap || 0}
+                        </div>
+                        {isActive && (
+                          <button
+                            type="button"
+                            className="circle-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setScores((prev) => {
+                                const next = [...prev];
+                                const current = next[idx];
+                                const newVal = Math.min(
+                                  2,
+                                  (current.handicap || 0) + 1
+                                );
+                                next[idx] = { ...current, handicap: newVal };
+                                return withCalcIfReady(next);
+                              });
+                            }}
+                            disabled={(scores[idx]?.handicap || 0) >= 2}
+                          >
+                            +
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

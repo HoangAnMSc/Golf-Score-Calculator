@@ -542,6 +542,12 @@ button:hover,
   /* text-overflow: ellipsis; */
 }
 
+.frontName{
+  width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 .gross_score {
   font-size: 38px;
   font-weight: 700;
@@ -1040,4 +1046,49 @@ body.landscape-lock {
 .neg-cell .mark-nearpin,
 .neg-cell .score-val {
   color: #fff;
+}
+
+/* ===================================================>>   Hadicap   << ========================================= */
+.handicap-row {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.handicap-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+}
+
+.handicap-row .counter-box {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-light);
+  gap: 3px;
+}
+
+.handicap-row .circle-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 100%;
+  background-color: #aa1010;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.handicap-row .counter-value {
+  min-width: 15px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.player-tab .hadicap_score {
+  position: absolute;
+  top: 40px;
+  left: 70px;
 }
