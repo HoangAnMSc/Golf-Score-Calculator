@@ -29,8 +29,6 @@ const Score = () => {
     JSON.parse(localStorage.getItem("gameSetup"))?.course ||
     "My Course";
 
-  // const frontName =
-  //   hole >= 10 ? state?.backname || "後半" : state?.frontname || "前半";
   const frontName =
     hole >= 10
       ? JSON.parse(localStorage.getItem("gameSetup"))?.backname || "後半"
@@ -332,7 +330,6 @@ const Score = () => {
       //Birdie Logic
       if (enabledBonusKeys?.has("birdie")) {
         let birdieCount = 0;
-
         if (raw[parentRed] < raw[childBlue]) {
           // Red win
           redPts += raw[childBlue] - raw[parentRed];
@@ -366,11 +363,14 @@ const Score = () => {
             bluePts += 1;
             redPts -= 1;
           } else {
+            console.log("Draw333");
             bluePts = redPts = 0;
+            console.log("Draw3332222", bluePts, redPts);
           }
         }
 
         const factor = birdieCount > 0 ? birdieCount : 1;
+        console.log("Dea", factor);
         redPts = (redPts + factor) * factor;
         bluePts = (bluePts - factor) * factor;
       } else {
@@ -419,13 +419,6 @@ const Score = () => {
       if (reachCount > 0 && reachValue > 0) {
         const pow = Math.pow(2, Math.min(reachCount, 4)); // 2, 4, 8, 16
         const bonus = Math.min(reachValue, pow);
-        // if (redPts > 0) {
-        //   redPts += bonus;
-        //   bluePts -= bonus;
-        // } else if (bluePts > 0) {
-        //   bluePts += bonus;
-        //   redPts -= bonus;
-        // }
 
         if (redPts > 0) {
           redPts = redPts * bonus;
@@ -570,8 +563,12 @@ const Score = () => {
         (s) => Number(s.total_score || 0) + Number(s.pre_score || 0)
       );
 
+      //AN-1013-UPDATE GROSS SCORE
       const prevGross = currentHoleData.scores.map(
-        (s) => Number(s.gross_score || 0) + Number(s.score || 0)
+        (s) =>
+          Number(s.gross_score || 0) +
+          Number(s.score || 0) -
+          Number(s.handicap || 0)
       );
 
       if (allHolesData[nextHole]?.scores) {
@@ -836,8 +833,11 @@ const Score = () => {
                   onClick={() => setActivePlayerIdx(idx)}
                 >
                   <div className="player-name">{name}</div>
+                  {/* AN-1013-UPDATE GROSS SCORE */}
                   <div className="gross_score">
-                    {scores[idx].gross_score + scores[idx].score}
+                    {scores[idx].gross_score +
+                      scores[idx].score -
+                      scores[idx].handicap}
                   </div>
                   {enabledBonusKeys?.has("handicap") &&
                     scores[idx].handicap > 0 && (
@@ -850,13 +850,11 @@ const Score = () => {
                     {scores[idx].pre_score >= 0 ? "+" : ""}
                     {scores[idx].pre_score})
                   </div>
-
                   {/* Near Pin label */}
                   {scores[idx].nearPin && <div className="pin-label">ニピ</div>}
                   {scores[idx].reach && (
                     <div className="reach-label">リーチ</div>
                   )}
-
                   {isActive && (
                     <div
                       className="team-switch"
