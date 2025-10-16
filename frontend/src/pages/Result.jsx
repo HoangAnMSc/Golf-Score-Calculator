@@ -186,16 +186,20 @@ function Result() {
   };
 
   // ===== Helpers render =====
+  //AN-1016-UPDATE score_val,handicap
   const getCell = (holeIndex, playerIndex) => {
     const h = holeIndex + 1;
     const s = getHoleObj(h)?.scores?.[playerIndex] ?? {};
-    const score_val = typeof s.score === "number" ? s.score : "";
+    const score_val =
+      typeof s.score === "number" ? s.score + s.gross_score - s.handicap : "";
     const pre_val = typeof s.pre_score === "number" ? s.pre_score : "";
+    const handicap_val = typeof s.handicap === "number" ? s.handicap : 0;
     return {
       score: score_val,
       pre_score: pre_val,
       reach: !!s.reach,
       nearPin: !!s.nearPin,
+      handicap: handicap_val,
     };
   };
 
@@ -219,9 +223,6 @@ function Result() {
 
   return (
     <div ref={containerRef} className="container">
-      {/* <h2 className="title">Score Calculator</h2>
-      <p className="subtitle">A simple way to track your game points.</p> */}
-
       <div className="form_container">
         {/* Header */}
         <div className="scorecard-header">
@@ -241,13 +242,12 @@ function Result() {
             <thead>
               <tr className="holes-row">
                 <th style={{ width: 80 }}>ホール</th>
-
                 {/* NEW:種別*/}
                 <th className="type-col">種別</th>
-
                 {holes.slice(0, 9).map((h) => (
                   <th key={`h-out-${h}`}>{h}</th>
                 ))}
+                {/* AN-1016-UPDATE NAME OF HOLE */}
                 <th className="section-sum">{setup.frontname || "前半"}</th>
                 {holes.slice(9, 18).map((h) => (
                   <th key={`h-in-${h}`}>{h}</th>
@@ -283,13 +283,14 @@ function Result() {
             </thead>
 
             <tbody>
+              {/* AN-1016-UPDATE backGross,backScore */}
               {players.map((name, pIdx) => {
                 const frontScore = sumScore(pIdx, 1, 9);
                 const frontGross = sumGross(pIdx, 1, 9);
-                const backScore = sumScore(pIdx, 10, 18);
-                const backGross = sumGross(pIdx, 10, 18);
-                const grossTotal = frontGross + backGross;
-                const scoreTotal = frontScore + backScore;
+                const backScore = sumScore(pIdx, 1, 9) + sumScore(pIdx, 10, 18);
+                const backGross = sumGross(pIdx, 1, 9) + sumGross(pIdx, 10, 18);
+                const grossTotal = backGross;
+                const scoreTotal = backScore;
 
                 return (
                   <tr key={`player-${pIdx}`} className="player-row">
@@ -305,10 +306,8 @@ function Result() {
 
                     {/* OUT holes */}
                     {holes.slice(0, 9).map((_, i) => {
-                      const { score, pre_score, reach, nearPin } = getCell(
-                        i,
-                        pIdx
-                      );
+                      const { score, pre_score, reach, nearPin, handicap } =
+                        getCell(i, pIdx);
                       const isNeg =
                         typeof pre_score === "number" && pre_score < 0;
 
@@ -316,6 +315,12 @@ function Result() {
                         //AN-1016-UPDATE UI PRESCORE
                         <td key={`p${pIdx}-out-${i}`} className="score-cell">
                           <div className="cell-inner">
+                            {handicap == 1 && (
+                              <span className="mark-handicap">①</span>
+                            )}
+                            {handicap == 2 && (
+                              <span className="mark-handicap">②</span>
+                            )}
                             <span className="score-val">{score}</span>
                           </div>
                           <hr />
@@ -344,10 +349,8 @@ function Result() {
                     {/* IN holes */}
                     {holes.slice(9, 18).map((_, i) => {
                       const holeIdx = 9 + i;
-                      const { score, pre_score, reach, nearPin } = getCell(
-                        holeIdx,
-                        pIdx
-                      );
+                      const { score, pre_score, reach, nearPin, handicap } =
+                        getCell(holeIdx, pIdx);
                       const isNeg =
                         typeof pre_score === "number" && pre_score < 0;
 
@@ -355,6 +358,12 @@ function Result() {
                         //AN-1016-UPDATE UI PRESCORE
                         <td key={`p${pIdx}-out-${i}`} className="score-cell">
                           <div className="cell-inner">
+                            {handicap == 1 && (
+                              <span className="mark-handicap">①</span>
+                            )}
+                            {handicap == 2 && (
+                              <span className="mark-handicap">②</span>
+                            )}
                             <span className="score-val">{score}</span>
                           </div>
                           <hr />
@@ -394,7 +403,8 @@ function Result() {
         </div>
 
         {(setup?.rules?.["Reach Declaration"] ||
-          setup?.rules?.["Near Pin Bonus"]) && (
+          setup?.rules?.["Near Pin Bonus"] ||
+          setup?.rules?.["Handicap"]) && (
           <div className="legend">
             {setup?.rules?.["Reach Declaration"] && (
               <span className="legend-item">
@@ -404,6 +414,11 @@ function Result() {
             {setup?.rules?.["Near Pin Bonus"] && (
               <span className="legend-item">
                 <span className="mark-nearpin">●</span> Near Pin
+              </span>
+            )}
+            {setup?.rules?.["Handicap"] && (
+              <span className="legend-item">
+                <span className="mark-handicap">①②</span> Handicap
               </span>
             )}
           </div>
