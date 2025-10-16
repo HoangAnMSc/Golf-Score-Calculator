@@ -363,16 +363,21 @@ const Score = () => {
             bluePts += 1;
             redPts -= 1;
           } else {
-            console.log("Draw333");
             bluePts = redPts = 0;
-            console.log("Draw3332222", bluePts, redPts);
           }
         }
 
-        const factor = birdieCount > 0 ? birdieCount : 1;
-        console.log("Dea", factor);
-        redPts = (redPts + factor) * factor;
-        bluePts = (bluePts - factor) * factor;
+        // AN-1016-UPDATE
+        // const factor = birdieCount > 0 ? birdieCount : 1;
+        // redPts = (redPts + factor) * factor;
+        // bluePts = (bluePts - factor) * factor;
+        if (birdieCount == 2) {
+          redPts = (redPts + 2) * 2;
+          bluePts = -redPts;
+        } else if (birdieCount == 1) {
+          redPts = redPts + 1;
+          bluePts = -redPts;
+        }
       } else {
         //Normal Logic
         if (raw[parentRed] < raw[parentBlue]) {

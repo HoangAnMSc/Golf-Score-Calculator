@@ -1037,15 +1037,12 @@ body.landscape-lock {
   overflow: hidden;
 }
 
-.neg-cell {
-  background: #ff1744 !important;
-  color: #fff;
+.score-val {
+  font-weight: 600;
 }
 
-.neg-cell .mark-reach,
-.neg-cell .mark-nearpin,
-.neg-cell .score-val {
-  color: #fff;
+.neg-cell{
+  color: #ff0033;
 }
 
 /* ===================================================>>   Hadicap   << ========================================= */
