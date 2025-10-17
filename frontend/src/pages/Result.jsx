@@ -223,6 +223,20 @@ function Result() {
     return sum || 0;
   };
 
+  // AN-1017-CREATE FUNC
+  const isHoleReady = (h) => {
+    try {
+      const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
+      const s = all[String(h)]?.scores;
+      if (!Array.isArray(s) || s.length < 4) return false;
+      const red = s.filter((p) => p?.teamColor === "red").length;
+      const blue = s.filter((p) => p?.teamColor === "blue").length;
+      return red === 2 && blue === 2;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div ref={containerRef} className="container">
       <div className="form_container">
@@ -323,8 +337,12 @@ function Result() {
                         //AN-1017-UPDATE UI
                         <td
                           key={`p${pIdx}-out-${i}`}
-                          className={`score-cell ${
-                            team == "blue" ? "blue-cell" : "red-cell"
+                          className={`score-cell  ${
+                            isHoleReady(i + 1)
+                              ? team == "blue"
+                                ? "blue-cell"
+                                : "red-cell"
+                              : "normal-cell"
                           }`}
                         >
                           <div className="cell-inner">
@@ -370,8 +388,12 @@ function Result() {
                         //AN-1017-UPDATE UI
                         <td
                           key={`p${pIdx}-out-${i}`}
-                          className={`score-cell ${
-                            team == "blue" ? "blue-cell" : "red-cell"
+                          className={`score-cell  ${
+                            isHoleReady(i + 2)
+                              ? team == "blue"
+                                ? "blue-cell"
+                                : "red-cell"
+                              : "normal-cell"
                           }`}
                         >
                           <div className="cell-inner">

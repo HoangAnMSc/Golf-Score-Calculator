@@ -1062,6 +1062,10 @@ body.landscape-lock {
   background: #4584f8;
 }
 
+.normal-cell {
+  background: #ffffff;
+}
+
 /* ===================================================>>   Hadicap   << ========================================= */
 .handicap-row {
   display: flex;
