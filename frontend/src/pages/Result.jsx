@@ -284,13 +284,14 @@ function Result() {
 
             <tbody>
               {/* AN-1016-UPDATE backGross,backScore */}
+              {/* AN-1017-UPDATE backGross,backScore */}
               {players.map((name, pIdx) => {
                 const frontScore = sumScore(pIdx, 1, 9);
                 const frontGross = sumGross(pIdx, 1, 9);
-                const backScore = sumScore(pIdx, 1, 9) + sumScore(pIdx, 10, 18);
+                const backScore = sumScore(pIdx, 10, 18);
                 const backGross = sumGross(pIdx, 1, 9) + sumGross(pIdx, 10, 18);
                 const grossTotal = backGross;
-                const scoreTotal = backScore;
+                const scoreTotal = frontScore + backScore;
 
                 return (
                   <tr key={`player-${pIdx}`} className="player-row">
