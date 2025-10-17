@@ -187,19 +187,21 @@ function Result() {
 
   // ===== Helpers render =====
   //AN-1016-UPDATE score_val,handicap
+  //AN-1017-UPDATE score_val,team_color
   const getCell = (holeIndex, playerIndex) => {
     const h = holeIndex + 1;
     const s = getHoleObj(h)?.scores?.[playerIndex] ?? {};
-    const score_val =
-      typeof s.score === "number" ? s.score + s.gross_score - s.handicap : "";
+    const score_val = typeof s.score === "number" ? s.score - s.handicap : "";
     const pre_val = typeof s.pre_score === "number" ? s.pre_score : "";
     const handicap_val = typeof s.handicap === "number" ? s.handicap : 0;
+    const team_color = s.teamColor;
     return {
       score: score_val,
       pre_score: pre_val,
       reach: !!s.reach,
       nearPin: !!s.nearPin,
       handicap: handicap_val,
+      team: team_color,
     };
   };
 
@@ -289,8 +291,8 @@ function Result() {
                 const frontScore = sumScore(pIdx, 1, 9);
                 const frontGross = sumGross(pIdx, 1, 9);
                 const backScore = sumScore(pIdx, 10, 18);
-                const backGross = sumGross(pIdx, 1, 9) + sumGross(pIdx, 10, 18);
-                const grossTotal = backGross;
+                const backGross = sumGross(pIdx, 10, 18);
+                const grossTotal = frontGross + backGross;
                 const scoreTotal = frontScore + backScore;
 
                 return (
@@ -307,14 +309,24 @@ function Result() {
 
                     {/* OUT holes */}
                     {holes.slice(0, 9).map((_, i) => {
-                      const { score, pre_score, reach, nearPin, handicap } =
-                        getCell(i, pIdx);
-                      const isNeg =
-                        typeof pre_score === "number" && pre_score < 0;
+                      const {
+                        score,
+                        pre_score,
+                        reach,
+                        nearPin,
+                        handicap,
+                        team,
+                      } = getCell(i, pIdx);
 
                       return (
                         //AN-1016-UPDATE UI PRESCORE
-                        <td key={`p${pIdx}-out-${i}`} className="score-cell">
+                        //AN-1017-UPDATE UI
+                        <td
+                          key={`p${pIdx}-out-${i}`}
+                          className={`score-cell ${
+                            team == "blue" ? "blue-cell" : "red-cell"
+                          }`}
+                        >
                           <div className="cell-inner">
                             {handicap == 1 && (
                               <span className="mark-handicap">①</span>
@@ -325,16 +337,10 @@ function Result() {
                             <span className="score-val">{score}</span>
                           </div>
                           <hr />
-                          <div
-                            className={`cell-inner ${isNeg ? "neg-cell" : ""}`}
-                          >
+                          <div className="cell-inner">
                             {reach && <span className="mark-reach">△</span>}
                             {nearPin && <span className="mark-nearpin">●</span>}
-                            <span
-                              className={`score-val ${isNeg ? "neg-cell" : ""}`}
-                            >
-                              {pre_score}
-                            </span>
+                            <span className={"score-val"}>{pre_score}</span>
                           </div>
                         </td>
                       );
@@ -350,14 +356,24 @@ function Result() {
                     {/* IN holes */}
                     {holes.slice(9, 18).map((_, i) => {
                       const holeIdx = 9 + i;
-                      const { score, pre_score, reach, nearPin, handicap } =
-                        getCell(holeIdx, pIdx);
-                      const isNeg =
-                        typeof pre_score === "number" && pre_score < 0;
+                      const {
+                        score,
+                        pre_score,
+                        reach,
+                        nearPin,
+                        handicap,
+                        team,
+                      } = getCell(holeIdx, pIdx);
 
                       return (
                         //AN-1016-UPDATE UI PRESCORE
-                        <td key={`p${pIdx}-out-${i}`} className="score-cell">
+                        //AN-1017-UPDATE UI
+                        <td
+                          key={`p${pIdx}-out-${i}`}
+                          className={`score-cell ${
+                            team == "blue" ? "blue-cell" : "red-cell"
+                          }`}
+                        >
                           <div className="cell-inner">
                             {handicap == 1 && (
                               <span className="mark-handicap">①</span>
@@ -368,16 +384,10 @@ function Result() {
                             <span className="score-val">{score}</span>
                           </div>
                           <hr />
-                          <div
-                            className={`cell-inner ${isNeg ? "neg-cell" : ""}`}
-                          >
+                          <div className="cell-inner">
                             {reach && <span className="mark-reach">△</span>}
                             {nearPin && <span className="mark-nearpin">●</span>}
-                            <span
-                              className={`score-val ${isNeg ? "neg-cell" : ""}`}
-                            >
-                              {pre_score}
-                            </span>
+                            <span className={"score-val"}>{pre_score}</span>
                           </div>
                         </td>
                       );

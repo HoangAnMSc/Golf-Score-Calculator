@@ -1098,7 +1098,21 @@ const Score = () => {
         })}
 
         <div className="nav_bar">
-          <button id="back_btn" type="button" onClick={() => navigate("/rule")}>
+          {/* AN-1017-UPDATE Setting Button */}
+          <button
+            id="back_btn"
+            type="button"
+            onClick={() => {
+              if (!isHoleReady(1)) {
+                navigate("/rule");
+              }
+            }}
+            disabled={isHoleReady(1)}
+            style={{
+              cursor: isHoleReady(1) ? "not-allowed" : "pointer",
+              opacity: isHoleReady(1) ? 0.5 : 1.5,
+            }}
+          >
             Setting
           </button>
           <button type="button" onClick={handlePreHole}>

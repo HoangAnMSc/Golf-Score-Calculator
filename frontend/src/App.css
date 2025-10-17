@@ -344,7 +344,7 @@ button:hover,
   width: 360px;
   height: 380px;
   position: absolute;
-  top: 190px;
+  top: 23vh;
   opacity: 1;
   transform: translateY(0);
   transition: height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
@@ -1010,28 +1010,32 @@ input[aria-invalid="true"] {
 /* △ Reach */
 .mark-reach {
   font-size: 12px;
-  color: #ff5722;
+  font-weight: 600;
+  color: #000000;
 }
 
 /* ● Near Pin */
 .mark-nearpin {
   font-size: 12px;
-  color: #2196f3;
+  font-weight: 600;
+  color: #000000;
 }
 
 /* ①② Handicap */
 .mark-handicap {
   font-size: 12px;
-  color: #27ae60;
+  font-weight: 600;
+  color: #000000;
 }
 
 .legend {
-  margin: 8px 20px;
+  padding: 8px 20px;
   text-align: left;
   font-size: 16px;
   display: flex;
   justify-content: center;
   gap: 10px;
+  background: #ffffff;
 }
 
 .legend-item {
@@ -1050,8 +1054,12 @@ body.landscape-lock {
   font-weight: 600;
 }
 
-.neg-cell{
-  color: #ff0033;
+.red-cell{
+  background: #ff4d71;
+}
+
+.blue-cell {
+  background: #4584f8;
 }
 
 /* ===================================================>>   Hadicap   << ========================================= */
