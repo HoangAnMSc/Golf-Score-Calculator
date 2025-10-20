@@ -83,6 +83,9 @@ const Score = () => {
   const [selectedField, setSelectedField] = useState("score");
   const [errorMessage, setErrorMessage] = useState("");
   const [showError, setShowError] = useState(false);
+
+  //AN-1020-ADD 削除 Button
+  const [showReset, setShowReset] = useState(false);
   const [drawBonus, setDrawBonus] = useState(() => {
     const savedDrawBonus = localStorage.getItem("drawBonus");
     return savedDrawBonus ? JSON.parse(savedDrawBonus) : 0;
@@ -685,6 +688,26 @@ const Score = () => {
     setShowError(false);
   };
 
+  //AN-1020-ADD 削除 Button
+  const handleCancelReset = () => {
+    setShowReset(false);
+  };
+
+  const keysToRemove = [
+    "activePlayerIdx",
+    "drawBonus",
+    "gameSetup",
+    "hole",
+    "allHolesData",
+  ];
+
+  const handleReset = () => {
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+    navigate("/");
+  };
+
   // Hole had data storage ?
   const isHoleReady = (h) => {
     try {
@@ -714,6 +737,19 @@ const Score = () => {
           </div>
         )}
 
+        {/* AN-1020-ADD 削除 Button */}
+        {showReset && (
+          <div className="error-modal">
+            <div className="error-modal-content">
+              <p>新しい試合を初めますか。</p>
+              <button onClick={handleCancelReset}>Cancel</button>
+              <button onClick={handleReset} style={{ background: `#e74c3c` }}>
+                OK
+              </button>
+            </div>
+          </div>
+        )}
+
         <h3 className="title">{courseName}'s Course</h3>
 
         <div className="hole-wapper">
@@ -728,7 +764,8 @@ const Score = () => {
             aria-expanded={showHolePicker}
           >
             <span className="frontName">{frontName}</span>
-            <span>H{hole}</span>
+            {/* AN-1020-UPDATE UI*/}
+            <span>{hole}H</span>
           </button>
 
           <div className="par-content">
@@ -1099,22 +1136,30 @@ const Score = () => {
 
         <div className="nav_bar">
           {/* AN-1017-UPDATE Setting Button */}
-          <button
-            id="back_btn"
-            type="button"
-            onClick={() => {
-              if (!isHoleReady(1)) {
+          {/* AN-1020-ADD Setting Button */}
+          {!isHoleReady(1) && (
+            <button
+              id="back_btn"
+              type="button"
+              onClick={() => {
                 navigate("/rule");
-              }
-            }}
-            disabled={isHoleReady(1)}
-            style={{
-              cursor: isHoleReady(1) ? "not-allowed" : "pointer",
-              opacity: isHoleReady(1) ? 0.5 : 1.5,
-            }}
-          >
-            Setting
-          </button>
+              }}
+            >
+              Setting
+            </button>
+          )}
+          {/* AN-1020-ADD 削除 Button */}
+          {isHoleReady(1) && (
+            <button
+              id="reset_btn"
+              type="button"
+              onClick={() => {
+                setShowReset(true);
+              }}
+            >
+              削除
+            </button>
+          )}
           <button type="button" onClick={handlePreHole}>
             Pre
           </button>
