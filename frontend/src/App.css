@@ -565,6 +565,12 @@ button:hover,
 .pre_score {
   font-size: 18px;
   font-weight: 600;
+  letter-spacing: -2px;
+  width: 100%;
+  max-width: 75px;
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
 }
 
 .score-box{
