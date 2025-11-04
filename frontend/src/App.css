@@ -20,7 +20,7 @@ body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 320px;
+  /* min-width: 320px; */
   min-height: 100vh;
   justify-content: center;
   color: var(--text-dark);
@@ -262,6 +262,7 @@ body {
   flex-direction: column;
   justify-content: center;
   transition: 0.25s;
+  align-items: center;
 }
 
 .hole-content:hover {
@@ -1119,6 +1120,154 @@ body.landscape-lock {
 }
 
 .player-tab.active .hadicap_score {
-  top: 50px;
-  left: 75px;
+  top: 45px;
+  left: 70px;
+}
+/* ============================ Responsive cho màn hình nhỏ hơn 425px ============================ */
+@media (min-width: 1444px) {
+  .form_container .hole-picker.open {
+      top: 26vh;
+    }
+}
+@media (max-width: 374px) {
+  .player-map{
+    flex-direction: column;
+  }
+
+}
+@media (max-width: 424px) {
+
+  .container {
+    width: 100%;
+  }
+
+  .form_container {
+    width: 90vw;
+  }
+
+  .hole-wapper {
+    gap: 8px;
+  }
+
+  .hole-wapper .total_result {
+    width: 40vw;
+    font-size: 14px;
+    margin-top: 35px;
+  }
+
+  .hole-wapper .hole-content {
+    width: 80px;
+    height: 80px;
+    font-size: 16px;
+  }
+
+  .form_container .hole-picker.open {
+    width: 83.5vw;
+    height: 60vh;
+    position: absolute;
+    top: 24.5vh;
+    opacity: 1;
+    transform: translateY(0);
+    transition: height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  .form_container buton .hp-cell {
+    width: 10vw;
+    padding: 5px;
+    font-size: 10px;
+  }
+
+  .hole-wapper .par-content {
+    width: 40vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+
+  .player-tab {
+    padding: 5px;
+  }
+
+  .player-tab .gross_score {
+    font-size: 28px;
+    letter-spacing: -2px;
+  }
+
+  .player-tab.active .gross_score {
+    font-size: 36px;
+  }
+
+  .player-tab.active .hadicap_score {
+    top: 32px;
+    left: 60px;
+    font-size: 18px;
+  }
+
+  .player-tab .hadicap_score {
+    position: absolute;
+    font-size: 16px;
+    font-weight: 600;
+    top: 28px;
+    left: 55px;
+  }
+
+  .player-name {
+    font-size: 14px;
+  }
+
+  .pre_score {
+    font-size: 14px;
+  }
+
+  .score-box {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .numpad {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+
+  .numpad button {
+    font-size: 18px;
+    padding: 8px 0;
+  }
+
+  .checkbox-row {
+    font-size: 15px;
+  }
+
+  .hp-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .nav_bar {
+    gap: 8px;
+  }
+
+  .form_container .nav_bar #reset_btn{
+    width: 40%;
+  }
+
+  .form_container .title {
+    font-size: 22px;
+  }
+
+  .form_container h3 {
+    font-size: 20px;
+  }
+
+  .counter-box {
+    gap: 18px;
+  }
+
+  .circle-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
 }
