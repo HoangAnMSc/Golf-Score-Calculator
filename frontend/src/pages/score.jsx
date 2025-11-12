@@ -1032,8 +1032,10 @@ const Score = () => {
           const isDisabled = isNearPin && par !== 3;
 
           if (key === "custom") {
-            const customEnabled =
-              !!scores[activePlayerIdx].custom || drawBonus > 0;
+            //1112 - An -Unnable Onchange Delete
+            // const customEnabled =
+            //   !!scores[activePlayerIdx].custom || drawBonus > 0;
+            const customEnabled = !!scores[activePlayerIdx].custom;
 
             return (
               <div
@@ -1047,7 +1049,8 @@ const Score = () => {
                     checked={customEnabled}
                     onChange={(e) => {
                       //Unnable Onchange
-                      if (drawBonus > 0) return;
+                      //1112 - An -Unnable Onchange Delete
+                      // if (drawBonus > 0) return;
                       setScores((prev) => {
                         const next = prev.map((p) => ({
                           ...p,
