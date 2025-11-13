@@ -46,6 +46,32 @@ body {
   margin-top: 0px;
 }
 
+.container .courseName {
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.courseName .courseName_left{
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.courseName .courseName_right {
+  white-space: nowrap;
+  text-align: left;
+}
+
 .form_container {
   background: white;
   width: 90%;
@@ -54,6 +80,10 @@ body {
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   text-align: left;
+}
+
+.container.is-landscape .container {
+  width: 100%;
 }
 
 .form_container h3 {
@@ -85,6 +115,17 @@ body {
   color: #666;
   margin-top: 10px;
   text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.note .note_course {
+  max-width: 40%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
 }
 
 .form_container button {
@@ -940,17 +981,22 @@ input[aria-invalid="true"] {
 .scorecard td {
   border: 1px solid #ccc;
   padding: 4px 0px;
-  min-width: 40px;
+  min-width: 50px;
 }
 
 .scorecard th:first-child,
 .scorecard td:first-child {
   min-width: 60px;
+  max-width: 60px;
+  padding: 5px;
   font-weight: bold;
   position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: 5;
   background: #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .scorecard th:nth-child(2),
@@ -958,8 +1004,8 @@ input[aria-invalid="true"] {
   min-width: 60px;
   font-weight: bold;
   position: sticky;
-  left: 60px;
-  z-index: 3;
+  left: 72px;
+  z-index: 4;
   background: #f9fafb;
 }
 
@@ -994,7 +1040,7 @@ input[aria-invalid="true"] {
 
 .scorecard thead .par-row th:first-child {
   left: 0;
-  z-index: 4;
+  z-index: 5;
   background-color: #e8f5e9;
 }
 
@@ -1142,15 +1188,7 @@ body.landscape-lock {
   }
 
 }
-@media (max-width: 424px) {
-
-  .container {
-    width: 100%;
-  }
-
-  .form_container {
-    width: 90vw;
-  }
+@media (max-width: 425px) {
 
   .hole-wapper {
     gap: 8px;
@@ -1176,6 +1214,10 @@ body.landscape-lock {
     opacity: 1;
     transform: translateY(0);
     transition: height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  .form_container button {
+    font-size: 14px;
   }
 
   .form_container buton .hp-cell {
@@ -1277,4 +1319,31 @@ body.landscape-lock {
     height: 28px;
     font-size: 14px;
   }
+}
+
+/* Khóa scroll body khi xoay ngang */
+body.landscape-lock {
+  overflow: hidden;
+}
+
+/* Container kết quả bình thường */
+.result-container {
+  width: 100%;
+  max-width: 425px;
+  margin: 0 auto;
+}
+
+/* Khi bật chế độ xoay ngang */
+.result-container.is-landscape {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vh;
+  /* vì mình xoay 90 độ */
+  height: 100vw;
+  max-width: none;
+  transform: rotate(90deg) translateY(-100%);
+  transform-origin: top left;
+  z-index: 9999;
+  overflow: auto;
 }

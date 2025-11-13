@@ -17,75 +17,27 @@ function Result() {
   const navigate = useNavigate();
   const containerRef = useRef(null);
 
-  // ===== Landscape toggle (inline CSS) =====
+  //AN - 1112 - Edit Rotated
+  // ===== Landscape toggle (pure CSS) =====
   const [isLandscape, setIsLandscape] = useState(false);
-  const resizeHandlerRef = useRef(null);
-
-  function applyLandscapeCSS() {
-    const el = containerRef.current;
-    if (!el) return;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    document.body.classList.add("landscape-lock");
-
-    el.style.position = "fixed";
-    el.style.top = "0";
-    el.style.left = "0";
-    el.style.width = `${vh}px`;
-    el.style.height = `${vw}px`;
-    el.style.maxWidth = "none";
-    el.style.transform = "rotate(90deg) translateY(-100%)";
-    el.style.transformOrigin = "top left";
-    el.style.background = "#f8f9fa";
-    el.style.zIndex = "9999";
-    el.style.overflow = "auto";
-  }
-
-  function clearLandscapeCSS() {
-    const el = containerRef.current;
-    if (!el) return;
-    document.body.classList.remove("landscape-lock");
-
-    el.style.position = "";
-    el.style.top = "";
-    el.style.left = "";
-    el.style.width = "";
-    el.style.height = "";
-    el.style.maxWidth = "";
-    el.style.transform = "";
-    el.style.transformOrigin = "";
-    el.style.background = "";
-    el.style.zIndex = "";
-    el.style.overflow = "";
-  }
-
-  const handleToggleLandscape = () => {
-    if (!isLandscape) {
-      setIsLandscape(true);
-      applyLandscapeCSS();
-      const onResize = () => applyLandscapeCSS();
-      window.addEventListener("resize", onResize);
-      resizeHandlerRef.current = onResize;
-    } else {
-      setIsLandscape(false);
-      if (resizeHandlerRef.current) {
-        window.removeEventListener("resize", resizeHandlerRef.current);
-        resizeHandlerRef.current = null;
-      }
-      clearLandscapeCSS();
-    }
-  };
 
   useEffect(() => {
+    if (isLandscape) {
+      document.body.classList.add("landscape-lock");
+    } else {
+      document.body.classList.remove("landscape-lock");
+    }
+
+    // cleanup khi rời trang
     return () => {
-      if (resizeHandlerRef.current) {
-        window.removeEventListener("resize", resizeHandlerRef.current);
-        resizeHandlerRef.current = null;
-      }
-      clearLandscapeCSS();
+      document.body.classList.remove("landscape-lock");
     };
-  }, []);
+  }, [isLandscape]);
+
+  const handleToggleLandscape = () => {
+    setIsLandscape((prev) => !prev);
+  };
+  //AN - 1112 - Edit Rotated ===========end==============
 
   // ===== Data =====
   const setup = safeJSONParse("gameSetup", {
@@ -238,16 +190,24 @@ function Result() {
   };
 
   return (
-    <div ref={containerRef} className="container">
+    //AN - 1112 - Edit Rotated
+    <div
+      ref={containerRef}
+      className={`container result-container ${
+        isLandscape ? "is-landscape" : ""
+      }`}
+    >
       <div className="form_container">
         {/* Header */}
         <div className="scorecard-header">
           <div className="scorecard-title">
             <div className="title">スコアカード</div>
+            {/* AN - 1112 -Edit note */}
             <p className="note">
-              <span>Course : {setup.course || "Course"}</span>
-              <span style={{ margin: "0 8px" }}>|</span>
-              <span>Date : {setup.date || ""}</span>
+              <span className="note_course">
+                Course : {setup.course || "Course"}
+              </span>
+              <span>| Date : {setup.date || ""}</span>
             </p>
           </div>
         </div>
@@ -387,9 +347,9 @@ function Result() {
                         //AN-1016-UPDATE UI PRESCORE
                         //AN-1017-UPDATE UI
                         <td
-                          key={`p${pIdx}-out-${i}`}
+                          key={`p${pIdx}-in-${i}`}
                           className={`score-cell  ${
-                            isHoleReady(i + 2)
+                            isHoleReady(holeIdx + 1)
                               ? team == "blue"
                                 ? "blue-cell"
                                 : "red-cell"
@@ -468,6 +428,7 @@ function Result() {
           <button type="button" onClick={handleExport}>
             Export File
           </button>
+          {/* AN - 1112 - Edit Rotated */}
           <button type="button" onClick={handleToggleLandscape}>
             {isLandscape ? "縦向" : "横向"}
           </button>

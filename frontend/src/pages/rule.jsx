@@ -84,8 +84,10 @@ function Rule() {
       <form className="form_container" onSubmit={handleSubmit} noValidate>
         <h3>Rule Settings</h3>
 
+        {/* AN - 1112 -Edit note */}
         <p className="note">
-          Course: <b>{course || "-"}</b> | Date: <b>{date || "-"}</b>
+          Course: <b className="note_course">{course || "-"}</b> | Date:{" "}
+          <b>{date || "-"}</b>
         </p>
 
         <div className="box_container">

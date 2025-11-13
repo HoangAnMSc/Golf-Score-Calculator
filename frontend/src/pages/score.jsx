@@ -749,8 +749,11 @@ const Score = () => {
             </div>
           </div>
         )}
-
-        <h3 className="title">{courseName}'s Course</h3>
+        {/* AN - 1112 -Edit courseName */}
+        <h3 className="courseName">
+          <span className="courseName_left">{courseName}</span>
+          <span className="courseName_right">Course</span>
+        </h3>
 
         <div className="hole-wapper">
           <button type="button" className="total_result" onClick={handleExport}>
@@ -1163,8 +1166,9 @@ const Score = () => {
               削除
             </button>
           )}
+          {/* AN - 1112 - Edit CSs */}
           <button type="button" onClick={handlePreHole}>
-            Pre
+            Previous
           </button>
           <button type="button" onClick={handleNextHole}>
             {hole === 18 ? "Finish" : "Next"}
