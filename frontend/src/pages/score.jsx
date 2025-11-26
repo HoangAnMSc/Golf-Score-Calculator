@@ -47,6 +47,9 @@ const Score = () => {
     "Custom Box": "custom",
   };
 
+  // An - 1126 - Add Loading Page
+  const [isLoading, setIsLoading] = useState(false);
+
   const enabledBonusKeys = rulesFromRule
     ? new Set(
         Object.entries(rulesFromRule)
@@ -603,37 +606,42 @@ const Score = () => {
       }
     }
 
-    //Next Hole Logic
-    setHole(nextHole);
+    // An - 1126 - Add Loading Page
+    setIsLoading(true);
+    setTimeout(() => {
+      //Next Hole Logic
+      setHole(nextHole);
 
-    if (!allHolesData[nextHole]?.scores) {
-      const prevScores = currentHoleData?.scores || [];
+      if (!allHolesData[nextHole]?.scores) {
+        const prevScores = currentHoleData?.scores || [];
 
-      const carryTotals = prevScores.map(
-        (s) => Number(s.total_score || 0) + Number(s.pre_score || 0)
-      );
-      const carryGross = prevScores.map(
-        (s) => Number(s.gross_score || 0) + Number(s.score || 0)
-      );
+        const carryTotals = prevScores.map(
+          (s) => Number(s.total_score || 0) + Number(s.pre_score || 0)
+        );
+        const carryGross = prevScores.map(
+          (s) => Number(s.gross_score || 0) + Number(s.score || 0)
+        );
 
-      setScores(
-        players.map((_, idx) => ({
-          score: 0,
-          pre_score: 0,
-          gross_score: carryGross[idx] || 0,
-          total_score: carryTotals[idx] || 0,
-          reach: false,
-          handicap: 0,
-          custom: drawBonus > 0,
-          customValue: drawBonus > 0 ? drawBonus : 0,
-          nearPin: false,
-          teamColor: "red",
-        }))
-      );
-      setInputBuffers(players.map(() => ""));
-    } else {
-      setScores(allHolesData[nextHole].scores);
-    }
+        setScores(
+          players.map((_, idx) => ({
+            score: 0,
+            pre_score: 0,
+            gross_score: carryGross[idx] || 0,
+            total_score: carryTotals[idx] || 0,
+            reach: false,
+            handicap: 0,
+            custom: drawBonus > 0,
+            customValue: drawBonus > 0 ? drawBonus : 0,
+            nearPin: false,
+            teamColor: "red",
+          }))
+        );
+        setInputBuffers(players.map(() => ""));
+      } else {
+        setScores(allHolesData[nextHole].scores);
+      }
+      setIsLoading(false);
+    }, 500);
   };
 
   //Preブータン
@@ -642,14 +650,21 @@ const Score = () => {
     if (drawBonus > 0) {
       setDrawBonus((prev) => prev - 1);
     }
-    setHole(prevHole);
 
-    const allHolesData = JSON.parse(localStorage.getItem("allHolesData")) || {};
-    const prevHoleData = allHolesData[prevHole];
-    if (prevHoleData) {
-      setPar(prevHoleData.par || 4);
-      setScores(prevHoleData.scores || scores);
-    }
+    // An - 1126 - Add Loading Page
+    setIsLoading(true);
+    setTimeout(() => {
+      setHole(prevHole);
+
+      const allHolesData =
+        JSON.parse(localStorage.getItem("allHolesData")) || {};
+      const prevHoleData = allHolesData[prevHole];
+      if (prevHoleData) {
+        setPar(prevHoleData.par || 4);
+        setScores(prevHoleData.scores || scores);
+      }
+      setIsLoading(false);
+    }, 500);
   };
 
   //Hole BUtton
@@ -664,23 +679,30 @@ const Score = () => {
   };
 
   const handlePickHole = (h) => {
-    setHole(h);
-    const newPar = getParOfHole(h);
-    setPar(newPar);
+    // An - 1126 - Add Loading Page
+    setIsLoading(true);
 
-    try {
-      const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
-      const s = all[String(h)]?.scores || null;
-      if (s) {
-        setScores(withCalcIfReady(s));
-      } else {
-        setScores((prev) =>
-          prev.map((p) => ({ ...p, score: 0, pre_score: 0, nearPin: false }))
-        );
-      }
-    } catch {}
+    setTimeout(() => {
+      s;
+      setHole(h);
+      const newPar = getParOfHole(h);
+      setPar(newPar);
 
-    setShowHolePicker(false);
+      try {
+        const all = JSON.parse(localStorage.getItem("allHolesData") || "{}");
+        const s = all[String(h)]?.scores || null;
+        if (s) {
+          setScores(withCalcIfReady(s));
+        } else {
+          setScores((prev) =>
+            prev.map((p) => ({ ...p, score: 0, pre_score: 0, nearPin: false }))
+          );
+        }
+      } catch {}
+
+      setShowHolePicker(false);
+      setIsLoading(false);
+    }, 500);
   };
 
   //エーラOK＿ENTER
@@ -734,6 +756,13 @@ const Score = () => {
               <p>{errorMessage}</p>
               <button onClick={handleCloseError}>OK</button>
             </div>
+          </div>
+        )}
+
+        {/* An - 1126 - Add Loading Page */}
+        {isLoading && (
+          <div className="loading-overlay">
+            <div className="spinner"></div>
           </div>
         )}
 
@@ -1167,10 +1196,10 @@ const Score = () => {
             </button>
           )}
           {/* AN - 1112 - Edit CSs */}
-          <button type="button" onClick={handlePreHole}>
+          <button type="button" onClick={handlePreHole} disabled={isLoading}>
             Previous
           </button>
-          <button type="button" onClick={handleNextHole}>
+          <button type="button" onClick={handleNextHole} disabled={isLoading}>
             {hole === 18 ? "Finish" : "Next"}
           </button>
         </div>

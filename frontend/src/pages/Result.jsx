@@ -346,6 +346,7 @@ function Result() {
                       return (
                         //AN-1016-UPDATE UI PRESCORE
                         //AN-1017-UPDATE UI
+                        //AN-1112-UPDATE UI
                         <td
                           key={`p${pIdx}-in-${i}`}
                           className={`score-cell  ${

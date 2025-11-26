@@ -391,7 +391,7 @@ button:hover,
   width: 360px;
   height: 380px;
   position: absolute;
-  top: 23vh;
+  margin-top: -1vw;
   opacity: 1;
   transform: translateY(0);
   transition: height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
@@ -472,12 +472,6 @@ button:hover,
 .hp-par {
   font-size: 11px;
   opacity: 0.9;
-}
-
-@media (max-width: 420px) {
-  .hp-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
 }
 
 .player-map {
@@ -587,6 +581,8 @@ button:hover,
   width: 70px;
   white-space: nowrap;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
   /* text-overflow: ellipsis; */
 }
 
@@ -1179,7 +1175,7 @@ body.landscape-lock {
 /* ============================ Responsive cho màn hình nhỏ hơn 425px ============================ */
 @media (min-width: 1444px) {
   .form_container .hole-picker.open {
-      top: 26vh;
+      margin-top: 26vh;
     }
 }
 @media (max-width: 374px) {
@@ -1207,10 +1203,10 @@ body.landscape-lock {
   }
 
   .form_container .hole-picker.open {
-    width: 83.5vw;
-    height: 60vh;
+    width: 84.5vw;
+    height: 44vh;
     position: absolute;
-    top: 24.5vh;
+    margin-top: -2vw;
     opacity: 1;
     transform: translateY(0);
     transition: height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
@@ -1290,10 +1286,6 @@ body.landscape-lock {
     font-size: 15px;
   }
 
-  .hp-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
   .nav_bar {
     gap: 8px;
   }
@@ -1346,4 +1338,39 @@ body.landscape-lock {
   transform-origin: top left;
   z-index: 9999;
   overflow: auto;
+}
+
+/* An - 1126 - Add Loading Page */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 8px solid #ffffff88;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+button:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
